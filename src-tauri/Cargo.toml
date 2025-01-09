@@ -1,0 +1,32 @@
+[package]
+name = "TrialQ"
+version = "0.0.1-beta"
+description = "基于rust的本地离线客户端分析桌面客户端"
+authors = ["sivanliaobil@gmail.com"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "trial_q"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+log = "0.4.22"
+tauri-plugin-log = "2.2.0"
+reqwest = "0.12.12"
+regitry-code = "1.0.0"
+dotenv = "0.15.0"
+r2d2 = "0.8"
+diesel = { version = "2.2.0", features = ["r2d2","sqlite", "returning_clauses_for_sqlite_3_35"]}
+
