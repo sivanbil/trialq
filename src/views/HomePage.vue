@@ -85,9 +85,6 @@ export default {
       let licenseKey = formValue.licenseKey;
       let email = formValue.email;
       if (licenseKey) {
-        // 保存到 localStorage
-        localStorage.setItem('licenseKey', licenseKey);
-        this.hasLicence = true; // 更新许可证状态
 
         // 调用 Rust WebAssembly 函数发送请求
         this.sendLicenseToBackend(email, licenseKey);
@@ -95,10 +92,7 @@ export default {
     },
     async sendLicenseToBackend(email,licenseKey) {
       if (email && licenseKey) {
-        // 保存到 localStorage
-        localStorage.setItem('email', email);
-        localStorage.setItem('licenseKey', licenseKey);
-        this.hasLicence = true; // 更新许可证状态
+
         // 调用 Tauri 命令发送许可证到后端
         try {
           const response = await this.$rustInvoke('send_license', {
@@ -108,13 +102,16 @@ export default {
           console.log('License validation response:', response);
 
           if (response.valid) {
-            alert('许可证验证成功！');
+            // 保存到 localStorage
+            localStorage.setItem('email', email);
+            localStorage.setItem('licenseKey', licenseKey);
+            this.hasLicence = true; // 更新许可证状态
+            this.$showModal('许可证验证成功！');
           } else {
-            alert('许可证无效：' + response.message);
+            this.$showModal('许可证无效：' + response.message);
           }
         } catch (error) {
-          console.error('Failed to validate license:', error);
-          alert('许可证验证失败：' + error);
+          this.$showModal('许可证验证失败：' + error);
         }
       }
     },
@@ -130,5 +127,37 @@ export default {
 </script>
 
 <style scoped>
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7); /* 半透明黑色背景 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  z-index: 10; /* 确保遮盖层在最上层 */
+}
 
+.overlay-text {
+  color: white;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+}
+
+.overlay button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  color: white;
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.overlay button:hover {
+  background-color: #0056b3;
+}
 </style>

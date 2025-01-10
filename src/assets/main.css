@@ -3,7 +3,7 @@ html,body {
     margin: 0;
     padding: 0;
     overflow: hidden; /* 隐藏页面滚动条 */
-    background-color: #cfcfcf;
+    background-color: #fff;
 }
 #app {
     font-family: Avenir, Helvetica, Arial, sans-serif;
@@ -18,7 +18,7 @@ html,body {
     flex-direction: column;
     min-height: 48vh;
     margin: 0 auto;
-    background-color: #f5f5f5;
+    background-color: #fff;
 }
 
 
@@ -29,7 +29,7 @@ html,body {
     grid-template-columns: 1.5fr 1.5fr; /* 左边占 1.5 份，右边占 1 份 */
     grid-template-rows: 1fr 1fr; /* 上下两行 */
     grid-gap: 10px;
-    max-height: calc(100vh - 300px); /* 设置最大高度，留出底部空间 */
+    max-height: calc(100vh - 200px); /* 设置最大高度，留出底部空间 */
     padding: 10px; /* 减少内边距 */
     box-sizing: border-box;
     position: relative; /* 为遮盖层定位 */
@@ -63,8 +63,8 @@ html,body {
 
 /* Metro 部分滚动容器 */
 .metro-container {
-    margin-top: 300px; /* 留出 slogan 的高度 */
-    height: calc(100vh - 220px); /* 剩余高度 */
+    margin-top: 220px; /* 留出 slogan 的高度 */
+    height: calc(100vh - 200px); /* 剩余高度 */
     overflow-y: auto; /* 允许垂直滚动 */
 }
 

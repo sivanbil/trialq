@@ -25,8 +25,10 @@ serde_json = "1"
 log = "0.4.22"
 tauri-plugin-log = "2.2.0"
 reqwest = "0.12.12"
-regitry-code = "1.0.0"
+regitry-code = { version = "1.0.3", features = ["password"] }
 dotenv = "0.15.0"
-r2d2 = "0.8"
-diesel = { version = "2.2.0", features = ["r2d2","sqlite", "returning_clauses_for_sqlite_3_35"]}
+r2d2 = "0.8.10"
+chrono = "0.4.39"
+date-formatter = "0.2.0"
+diesel = { version = "2.2.0", features = ["r2d2", "sqlite", "returning_clauses_for_sqlite_3_35"] }
 

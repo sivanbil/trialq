@@ -32,10 +32,10 @@
         </div>
 
         <!-- 第三个标签页：其他 -->
-        <div v-if="activeTab === 2" class="p-6 bg-purple-700 text-white rounded-lg shadow-md relative">
+        <div v-if="activeTab === 2" class="p-6 bg-purple-700 text-white rounded-lg shadow-md relative ">
           <!-- 遮盖层 -->
-          <div class="absolute inset-0 bg-black bg-opacity-50 rounded-lg"></div>
-          <p class="text-gray-200">
+          <div class="absolute inset-0  bg-opacity-50 rounded-lg"></div>
+          <p class="text-white">
             <span class="mr-2">📢</span>
             请持续关注 TrialQ 的新版本发布！
           </p>
@@ -60,9 +60,8 @@ export default {
     return {
       // 标签页数据
       tabs: [
-        { label: '项目基础数据维护' },
-
-        { label: '数据工作平台' },
+        { label: '项目数据维护' },
+        { label: 'Excel工作台' },
         { label: '其他' },
       ],
       // 当前激活的标签页索引
