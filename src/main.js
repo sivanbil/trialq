@@ -55,6 +55,8 @@ import sloganPlugin from './plugins/sloganPlugin';
 
 //
 const { invoke } = window.__TAURI__.core;
+
+console.log(window.__TAURI__)
 app.config.globalProperties.$rustInvoke = invoke;
 
 app.use(sloganPlugin);

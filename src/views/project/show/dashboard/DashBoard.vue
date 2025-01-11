@@ -6,25 +6,29 @@
           @click="openDrawer"
           class="px-4 py-2 bg-purple-800 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
       >
-        导入表格
+        导入源数据表格
       </button>
     </div>
 
     <!-- 数据列表 -->
     <div>
-      <h4 class="text-lg font-semibold mb-2">数据归档</h4>
+      <h4 class="text-lg font-semibold mb-2">报告归档</h4>
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
         <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">项目编号</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">项目名称</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">报告编号</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">源数据表格</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">生成日期</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
         </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
         <tr v-for="(item, index) in dataList" :key="index">
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.date }}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.projectId }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.projectId }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.projectId }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.date }}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
             <button
                 @click="viewItem(index)"
@@ -71,9 +75,7 @@ export default {
     return {
       // 数据列表
       dataList: [
-        { date: '2023-10-01', projectId: 'P001' },
-        { date: '2023-10-02', projectId: 'P002' },
-        { date: '2023-10-03', projectId: 'P003' },
+
       ],
       // 抽屉表单相关状态
       isDrawerOpen: false,

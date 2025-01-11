@@ -4,7 +4,7 @@
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end text-left"
       @click.self="close"
   >
-    <div class="bg-white w-1/3 h-full p-6 overflow-y-auto">
+    <div class="bg-white w-2/3 h-full p-6 overflow-y-auto">
       <h2 class="text-lg font-semibold mb-4">添加工具</h2>
       <form @submit.prevent="save" class="space-y-4">
         <!-- 工具名称 -->

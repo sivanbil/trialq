@@ -1,16 +1,11 @@
 use serde::{Deserialize, Serialize};
 
 use std::{env, panic};
-use std::time::SystemTime;
-use crate::modules::user::user_service::UserService;
 use tauri::State;
 use crate::AppState;
 
-use crate::models::user::user_model::NewUser;
-use regitry_code::{read_key_file, decode_code, generate_random_string, verify_password, encrypt_password};
-use date_formatter::utils::format_date;
-
-
+use regitry_code::{read_key_file, decode_code};
+use std::path::{Path, PathBuf};
 
 // 定义许可证验证响应的结构
 #[derive(Serialize, Deserialize)]
@@ -30,10 +25,15 @@ pub async fn send_license(
 
     let code = &*license_key;
     // 获取环境变量 KEY_PATH
-    let private_key_path = env::var("KEY_PATH").expect("KEY_PATH environment variable not set");
+    let config_path = env::var("CONFIG_PATH").expect("KEY_PATH environment variable not set");
 
+    // 将 CONFIG_PATH 转换为 PathBuf
+    let mut private_key_path = PathBuf::from(config_path);
+
+    // 拼接私钥文件名
+    private_key_path.push("private.key");
     // 读取私钥
-    let private_key = read_key_file(private_key_path);
+    let private_key = read_key_file(private_key_path.to_string_lossy().parse().unwrap());
 
     // 解码注册码
     // 使用 catch_unwind 捕获 panic
