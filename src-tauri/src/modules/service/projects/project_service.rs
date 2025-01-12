@@ -43,8 +43,6 @@ pub struct ResponseData {
     project_name: String,
     #[serde(rename = "reportNumber")] // 转换为驼峰命名
     report_number: String,
-    #[serde(rename = "sourceFiles")] // 转换为驼峰命名
-    source_files: Vec<String>,
     #[serde(rename = "createTime")] // 转换为驼峰命名
     create_time: String,
     #[serde(rename = "stateName")]
@@ -225,23 +223,39 @@ impl ProjectService {
         }
     }
 
-    pub fn async_process_excel_files(&self, files: Vec<String>) -> Result<Response, String> {
-        // 模拟处理逻辑
-        let project_name = "Example Project".to_string();
-        let report_number = "REPORT-12345".to_string();
-        let create_time = format_date(SystemTime::now(), "%Y-%m-%d");
-        let state_name = "任务执行中".to_string();
-        // 构建返回的 JSON 数据
-        Ok(Response {
-            valid: true,
-            data: ResponseData {
-                project_name,
-                report_number,
-                source_files: files,
-                create_time,
-                state_name
-            },
-        })
-    }
+    // pub fn async_process_excel_files(&self, files: Vec<String>) -> Result<Response, String> {
+    //     // 模拟处理逻辑
+    //     let project_name = "Example Project".to_string();
+    //     let report_number = "REPORT-12345".to_string();
+    //     let create_time = format_date(SystemTime::now(), "%Y-%m-%d");
+    //     let state_name = "任务执行中".to_string();
+    //     //存储线程句柄
+    //     let mut handles = vec![];
+    //
+    //     // 为每个文件创建一个线程
+    //     for (index, file_path) in files.clone().into_iter().enumerate() {
+    //         let handle = std::thread::spawn(move || {
+    //             // 这里可以添加文件处理逻辑
+    //         });
+    //         handles.push(handle); // 将线程句柄存储到向量中
+    //     }
+    //
+    //     // 等待所有线程完成
+    //     for handle in handles {
+    //         handle.join().unwrap(); // 阻塞主线程，直到当前线程完成
+    //     }
+    //     // 进行数据汇总
+    //
+    //     // 构建返回的 JSON 数据
+    //     Ok(Response {
+    //         valid: true,
+    //         data: ResponseData {
+    //             project_name,
+    //             report_number,
+    //             create_time,
+    //             state_name
+    //         },
+    //     })
+    // }
 }
 

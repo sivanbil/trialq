@@ -9,6 +9,7 @@ use dotenv::dotenv;
 use std::env;
 use mlua::Lua;
 use serde::{Serialize, Deserialize};
+use crate::CONFIG_DIR;
 
 // 定义 DSL 规则的结构体
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -32,7 +33,7 @@ struct CustomValidationRule {
 
 // 定义验证结果的结构体
 #[derive(Debug, Serialize)]
-struct ValidationResult {
+pub struct ValidationResult {
     data: HashMap<String, String>, // 解析的数据
     is_valid: bool,               // 是否通过验证
     errors: Vec<String>,          // 错误信息
@@ -53,7 +54,7 @@ struct ValidationRules {
 }
 
 // 定义文件处理器结构体
-struct FileProcessor;
+pub struct FileProcessor;
 
 impl FileProcessor {
     // 解析数据的通用函数
@@ -218,49 +219,38 @@ impl FileProcessor {
     }
 
     // 扫描目录并处理文件
-    fn process_directory(
-        dir: &Path,
-        project_dir: &PathBuf,
-        validation_rules: &ValidationRules,
-        debug: bool,
-    ) -> Result<Vec<ValidationResult>, Box<dyn Error>> {
-        let mut all_results = Vec::new();
+    // 处理单个文件并返回结果
+    pub fn process_file<F>(
+        file_path: String,
+        callback: F,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: Fn(ValidationResult) -> (),
+    {
+        let file_path = PathBuf::from(file_path);
+        let file_name = file_path.file_stem().unwrap().to_str().unwrap();
+        let validation_path = CONFIG_DIR.join(format!("{}.yaml", "support_validation_config"));
 
-        for entry in fs::read_dir(dir)? {
-            let entry = entry?;
-            let path = entry.path();
+        let config_path = Self::get_config_path(file_name, &*CONFIG_DIR).map_err(|e| {
+            format!("处理文件 {} 时出错: {}", file_path.display(), e)
+        })?;
+        // 读取 YAML 配置文件
+        let rules = Self::read_yaml_config(config_path.to_str().unwrap())?;
 
-            if path.is_file() {
-                let file_name = path.file_stem().unwrap().to_str().unwrap();
-                let config_path = Self::get_config_path(file_name, project_dir)?;
+        let validation_rules = Self::read_validation_rules(validation_path.to_str().unwrap()).map_err(|e| {
+            format!("读取验证规则文件时出错: {}", e)
+        })?;
+        let results = match file_path.extension().and_then(|s| s.to_str()) {
+            Some("csv") => Self::parse_csv_with_rules(file_path.to_str().unwrap(), &rules, &validation_rules)?,
+            Some("xlsx") | Some("xls") => Self::parse_excel_with_rules(file_path.to_str().unwrap(), &rules, &validation_rules)?,
+            _ => return Err("不支持的文件格式".into()),
+        };
 
-                // 读取 YAML 配置文件
-                let rules = Self::read_yaml_config(config_path.to_str().unwrap())?;
-
-                let results = match path.extension().and_then(|s| s.to_str()) {
-                    Some("csv") => Self::parse_csv_with_rules(path.to_str().unwrap(), &rules, validation_rules)?,
-                    Some("xlsx") | Some("xls") => Self::parse_excel_with_rules(path.to_str().unwrap(), &rules, validation_rules)?,
-                    _ => continue,
-                };
-
-                if debug {
-                    Self::save_results_to_json(&results, &path)?;
-                }
-
-                all_results.extend(results);
-            }
+        // 将每个结果传递给回调函数
+        for result in results {
+            callback(result);
         }
 
-        Ok(all_results)
-    }
-
-    // 将结果保存为 JSON 文件（仅在 debug 模式下调用）
-    fn save_results_to_json(results: &[ValidationResult], path: &Path) -> Result<(), Box<dyn Error>> {
-        let json_results = serde_json::to_string_pretty(results)?;
-        let output_path = path.with_extension("json");
-        let mut file = File::create(&output_path)?;
-        file.write_all(json_results.as_bytes())?;
-        println!("解析和验证完成，结果已保存到 {:?}", output_path);
         Ok(())
     }
 }

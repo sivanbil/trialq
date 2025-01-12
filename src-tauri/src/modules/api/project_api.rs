@@ -2,15 +2,21 @@ use crate::AppState;
 use tauri::State;
 use crate::modules::{
     service::{
-        projects::project_service::{
-            ProjectListResponse,
-            SaveProjectResponse,
-            GetProjectResponse,
-            DeleteProjectResponse,
-            SupportedTemplateResponse,
-            Response
-        },
-        enums
+        projects::{
+            project_service::{
+                ProjectListResponse,
+                SaveProjectResponse,
+                GetProjectResponse,
+                DeleteProjectResponse,
+                SupportedTemplateResponse,
+
+            },
+            report_service::{
+                Response,
+                ResponseData
+            }
+        }
+
     }
 };
 use crate::modules::service::enums::SupportedTemplate;
@@ -73,16 +79,13 @@ pub async fn get_project_by_id(
 pub async fn handle_template_and_files(
     state: State<'_, AppState>, // 从状态中获取 AppState
     files: Vec<String>, template_name: String) -> Result<Response, String> {
-    let project_service = &state.project_service;
-
+    let report_service = &state.report_service;
     println!("Received template name: {}", template_name);
     println!("Received files:");
 
-    for (index, file_path) in files.iter().enumerate() {
-        println!("File {}: {}", index + 1, file_path);
-    }
 
-    project_service.async_process_excel_files(files)
+
+    report_service.async_process_excel_files(files)
 }
 
 

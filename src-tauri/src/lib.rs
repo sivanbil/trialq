@@ -1,7 +1,10 @@
+use std::env;
+use std::path::PathBuf;
 use diesel::r2d2::ConnectionManager;
 use diesel::SqliteConnection;
 // 导入第三方工具依赖包
 use dotenv;
+use lazy_static::lazy_static;
 
 pub mod models;
 pub mod core;
@@ -27,9 +30,13 @@ use modules::{
         }
     },
     service::{
-        projects::project_service::{ProjectService},
+        projects::{
+            project_service::{ProjectService},
+            report_service::ProjectReportService
+        },
         tools::tool_service::{ToolsService},
         user::user_service::UserService,
+
     },
 };
 
@@ -40,6 +47,15 @@ pub struct AppState {
     pub user_service: UserService,
     pub tools_service: ToolsService,
     pub project_service: ProjectService,
+    pub report_service: ProjectReportService,
+}
+
+lazy_static! {
+    // 全局 CONFIG_DIR
+    static ref CONFIG_DIR: PathBuf = {
+        let config_dir = env::var("CONFIG_DIR").expect("CONFIG_DIR 环境变量未设置");
+        PathBuf::from(config_dir)
+    };
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -50,6 +66,7 @@ pub fn run() {
     let user_service = UserService::new(db_pool.clone()); // 初始化 UserService
     let tools_service = ToolsService::new(db_pool.clone()); // 初始化 ToolsService
     let project_service = ProjectService::new(db_pool.clone()); // 初始化 ToolsService
+    let report_service = ProjectReportService::new(db_pool.clone()); // 初始化 ToolsService
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -68,6 +85,7 @@ pub fn run() {
             user_service,
             tools_service,
             project_service,
+            report_service
         })
         .invoke_handler(tauri::generate_handler![
             send_license,

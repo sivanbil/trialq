@@ -26,7 +26,7 @@ serde_json = "1.0.135"
 log = "0.4.22"
 tauri-plugin-log = "2.2.0"
 reqwest = "0.12.12"
-regitry-code = { version = "1.0.3", features = ["password"] }
+regitry-code = { version = "1.0.4", features = ["password", "code-utils"] }
 dotenv = "0.15.0"
 r2d2 = "0.8.10"
 calamine = "0.26.1"
@@ -36,5 +36,6 @@ mlua = { version = "0.10.2",  features = ["lua54", "vendored"] }
 date-formatter = "0.2.0"
 strum = "0.24"
 strum_macros = "0.24"
+lazy_static = "1.5.0"
 diesel = { version = "2.2.0", features = ["r2d2", "sqlite", "returning_clauses_for_sqlite_3_35"] }
 
