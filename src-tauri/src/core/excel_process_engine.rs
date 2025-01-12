@@ -218,7 +218,14 @@ impl FileProcessor {
     }
 
     // 扫描目录并处理文件
-    fn process_directory(dir: &Path, project_dir: &PathBuf, validation_rules: &ValidationRules) -> Result<(), Box<dyn Error>> {
+    fn process_directory(
+        dir: &Path,
+        project_dir: &PathBuf,
+        validation_rules: &ValidationRules,
+        debug: bool,
+    ) -> Result<Vec<ValidationResult>, Box<dyn Error>> {
+        let mut all_results = Vec::new();
+
         for entry in fs::read_dir(dir)? {
             let entry = entry?;
             let path = entry.path();
@@ -230,24 +237,24 @@ impl FileProcessor {
                 // 读取 YAML 配置文件
                 let rules = Self::read_yaml_config(config_path.to_str().unwrap())?;
 
-                match path.extension().and_then(|s| s.to_str()) {
-                    Some("csv") => {
-                        let results = Self::parse_csv_with_rules(path.to_str().unwrap(), &rules, validation_rules)?;
-                        Self::save_results_to_json(&results, &path)?;
-                    }
-                    Some("xlsx") | Some("xls") => {
-                        let results = Self::parse_excel_with_rules(path.to_str().unwrap(), &rules, validation_rules)?;
-                        Self::save_results_to_json(&results, &path)?;
-                    }
-                    _ => {}
+                let results = match path.extension().and_then(|s| s.to_str()) {
+                    Some("csv") => Self::parse_csv_with_rules(path.to_str().unwrap(), &rules, validation_rules)?,
+                    Some("xlsx") | Some("xls") => Self::parse_excel_with_rules(path.to_str().unwrap(), &rules, validation_rules)?,
+                    _ => continue,
+                };
+
+                if debug {
+                    Self::save_results_to_json(&results, &path)?;
                 }
+
+                all_results.extend(results);
             }
         }
 
-        Ok(())
+        Ok(all_results)
     }
 
-    // 将结果保存为 JSON 文件
+    // 将结果保存为 JSON 文件（仅在 debug 模式下调用）
     fn save_results_to_json(results: &[ValidationResult], path: &Path) -> Result<(), Box<dyn Error>> {
         let json_results = serde_json::to_string_pretty(results)?;
         let output_path = path.with_extension("json");

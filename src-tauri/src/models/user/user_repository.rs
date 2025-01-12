@@ -1,10 +1,10 @@
-use diesel::prelude::*;
-use diesel::r2d2::{Pool, ConnectionManager};
-use crate::models::user::user_model::{User, NewUser};
 use crate::models::user::schema::users::dsl::*;
+use crate::models::user::user_model::{NewUser, User};
+use diesel::prelude::*;
+use diesel::r2d2::{ConnectionManager, Pool};
 
 pub struct UserRepository {
-    pool: Pool<ConnectionManager<SqliteConnection>>,  // 直接使用 SqliteConnection
+    pool: Pool<ConnectionManager<SqliteConnection>>, // 直接使用 SqliteConnection
 }
 
 impl UserRepository {
@@ -18,7 +18,10 @@ impl UserRepository {
             .values(&new_user)
             .execute(&mut conn)
             .map_err(|e| e.to_string())?;
-        users.order(id.desc()).first(&mut conn).map_err(|e| e.to_string())
+        users
+            .order(id.desc())
+            .first(&mut conn)
+            .map_err(|e| e.to_string())
     }
 
     pub fn read_users(&self) -> Result<Vec<User>, String> {
@@ -32,7 +35,10 @@ impl UserRepository {
             .set(&updated_user)
             .execute(&mut conn)
             .map_err(|e| e.to_string())?;
-        users.find(user_id).first(&mut conn).map_err(|e| e.to_string())
+        users
+            .find(user_id)
+            .first(&mut conn)
+            .map_err(|e| e.to_string())
     }
 
     pub fn delete_user(&self, user_id: i32) -> Result<usize, String> {
@@ -43,10 +49,11 @@ impl UserRepository {
     }
 
     pub fn find_user_by_email(&self, user_email: &str) -> Result<Option<User>, String> {
-        use crate::models::user::schema::users::dsl::{users, email};  // 导入表名和列名
+        use crate::models::user::schema::users::dsl::{email, users}; // 导入表名和列名
 
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
-        users.filter(email.eq(user_email))  // 使用正确的表名和列名
+        users
+            .filter(email.eq(user_email)) // 使用正确的表名和列名
             .first::<User>(&mut conn)
             .optional()
             .map_err(|e| e.to_string())

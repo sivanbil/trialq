@@ -18,29 +18,21 @@
         <tr>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">项目名称</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">报告编号</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">源数据表格</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">生成日期</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
         </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
         <tr v-for="(item, index) in dataList" :key="index">
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.projectId }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.projectId }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.projectId }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.date }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.projectName }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.reportNumber}}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.createTime }}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
             <button
                 @click="viewItem(index)"
                 class="px-3 py-1 text-sm font-medium text-white bg-orange-500 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               查看
-            </button>
-            <button
-                @click="exportItem(index)"
-                class="px-3 py-1 ml-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              导出
             </button>
             <button
                 @click="deleteItem(index)"

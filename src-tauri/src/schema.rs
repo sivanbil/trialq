@@ -12,6 +12,7 @@ diesel::table! {
         verify_required -> Integer,
         create_time -> Text,
         update_time -> Nullable<Text>,
+        report_number -> Text,
     }
 }
 
@@ -27,6 +28,7 @@ diesel::table! {
         days_of_missing_pages -> Integer,
         create_time -> Text,
         update_time -> Nullable<Text>,
+        report_number -> Text,
     }
 }
 
@@ -50,6 +52,7 @@ diesel::table! {
         qry_response_user -> Text,
         qry_answer -> Text,
         qry_status -> Text,
+        report_number -> Text,
     }
 }
 

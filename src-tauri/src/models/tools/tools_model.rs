@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
 use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Queryable, Serialize, Deserialize)]
 pub struct Tool {
@@ -10,7 +10,7 @@ pub struct Tool {
     pub is_valid: bool,
 }
 
-#[derive(Insertable,AsChangeset, Serialize, Deserialize)]
+#[derive(Insertable, AsChangeset, Serialize, Deserialize)]
 #[diesel(table_name = crate::models::tools::schema::tools)]
 pub struct NewTool {
     pub name: String,

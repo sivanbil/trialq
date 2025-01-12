@@ -1,0 +1,105 @@
+use std::time::SystemTime;
+use crate::AppState;
+use date_formatter::utils::{format_date, DateFormat};
+use diesel::r2d2::{ConnectionManager, Pool};
+use diesel::SqliteConnection;
+use serde::{Deserialize, Serialize};
+use tauri::State;
+use crate::modules::{
+    service::{
+        projects::project_service::{
+            ProjectListResponse,
+            SaveProjectResponse,
+            GetProjectResponse,
+            DeleteProjectResponse,
+            SupportedTemplateResponse,
+            Response
+        },
+        enums
+    }
+};
+use crate::modules::service::enums::SupportedTemplate;
+
+#[tauri::command]
+pub async fn fetch_project_list(
+    state: State<'_, AppState>, // 从状态中获取 AppState
+    current_page: i64,
+    page_size: i64,
+    keyword: Option<String>,
+) -> Result<ProjectListResponse, String> {
+    // 调用 ProjectService 的分页查询方法
+    let project_service = &state.project_service;
+
+    // 查询分页数据
+    project_service.fetch_project_list(current_page, page_size, keyword)
+}
+
+
+#[tauri::command]
+pub async fn save_project(
+    state: State<'_, AppState>, // 从状态中获取 AppState
+    project_name: String,
+    description: String,
+) -> Result<SaveProjectResponse, String> {
+    // 调用 ProjectService 的保存项目方法
+    let project_service = &state.project_service;
+
+    project_service.save_project(project_name, description)
+}
+
+
+#[tauri::command]
+pub async fn delete_project(
+    state: State<'_, AppState>, // 从状态中获取 AppState
+    project_id: i32,            // 项目的唯一标识符
+) -> Result<DeleteProjectResponse, String> {
+    // 调用 ProjectService 的删除项目方法
+    let project_service = &state.project_service;
+
+    // 删除项目
+    project_service.delete_project(project_id)
+}
+
+
+#[tauri::command]
+pub async fn get_project_by_id(
+    state: State<'_, AppState>, // 从状态中获取 AppState
+    project_id: i32,            // 项目的唯一标识符
+) -> Result<GetProjectResponse, String> {
+    // 调用 ProjectService 的查询方法
+    let project_service = &state.project_service;
+
+    // 查询项目信息
+    project_service.get_project_by_id(project_id)
+}
+
+// 定义一个 Tauri 命令
+#[tauri::command]
+pub async fn handle_template_and_files(
+    state: State<'_, AppState>, // 从状态中获取 AppState
+    files: Vec<String>, template_name: String) -> Result<Response, String> {
+    let project_service = &state.project_service;
+
+    println!("Received template name: {}", template_name);
+    println!("Received files:");
+
+    for (index, file_path) in files.iter().enumerate() {
+        println!("File {}: {}", index + 1, file_path);
+    }
+
+    project_service.async_process_excel_files(files, template_name)
+}
+
+
+#[tauri::command]
+pub async fn fetch_supported_template_list(
+    state: State<'_, AppState>, // 从状态中获取 AppState
+) -> Result<SupportedTemplateResponse, String> {
+    // 获取所有支持的模板名称
+    let templates = SupportedTemplate::all_supported_templates();
+
+    let valid = true;
+    // 返回结果
+    Ok(SupportedTemplateResponse { valid, templates })
+}
+

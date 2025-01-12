@@ -100,7 +100,8 @@ CREATE TABLE project_missing_page (
     data_page_name TEXT NOT NULL,
     days_of_missing_pages INTEGER NOT NULL,
     create_time TEXT NOT NULL,
-    update_time TEXT
+    update_time TEXT,
+    report_number TEXT NOT NULL
 );
 
 -- 项目query_detail数据--对应源数据
@@ -122,7 +123,8 @@ CREATE TABLE project_query_detail (
     qry_response_date_localized TEXT,
     qry_response_user TEXT NOT NULL,
     qry_answer TEXT NOT NULL,
-    qry_status TEXT NOT NULL
+    qry_status TEXT NOT NULL,
+    report_number TEXT NOT NULL
 );
 
 -- 项目的数据清理进度
@@ -136,7 +138,8 @@ CREATE TABLE project_data_clean_progress (
     entered INTEGER NOT NULL,
     verify_required INTEGER NOT NULL,
     create_time TEXT NOT NULL,
-    update_time TEXT
+    update_time TEXT,
+    report_number TEXT NOT NULL
 );
 
 

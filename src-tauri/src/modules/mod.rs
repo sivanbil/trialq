@@ -1,8 +1,3 @@
-pub mod licence;
+pub mod api;
 
-pub mod tools;
-
-pub mod user;
-
-
-pub mod project;
+pub mod service;

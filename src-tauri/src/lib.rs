@@ -4,25 +4,6 @@ use diesel::SqliteConnection;
 use dotenv;
 
 
-// 导入需要包漏出去的函数所在包
-pub mod modules {
-    pub mod licence {
-        pub mod licence_service;
-    }
-
-    pub mod user {
-        pub mod user_service;
-    }
-
-    pub mod tools {
-        pub mod tool_service;
-    }
-
-    pub mod projects {
-        pub mod project_service;
-    }
-
-}
 
 pub mod models {
     pub mod user {
@@ -46,59 +27,87 @@ pub mod models {
             pub mod project_model;
             pub mod project_repository;
             pub mod schema;
-
         }
-
     }
 }
+pub mod core {
+    pub mod connections;
+    pub mod excel_process_engine;
+}
 
-pub mod connections;
-pub mod utils;
+// 导入需要包漏出去的函数所在包
+pub mod modules {
+    pub mod api {
+        pub mod project_api;
 
+        pub mod tools_api;
+
+        pub mod licence_api;
+    }
+
+    pub mod service {
+
+        pub mod user {
+            pub mod user_service;
+        }
+
+        pub mod tools {
+            pub mod tool_service;
+        }
+
+        pub mod projects {
+            pub mod project_service;
+        }
+        pub mod enums;
+    }
+
+
+}
+
+use core::{
+    connections::db::init_pool
+};
 
 use modules::{
     // 工具
-    licence::licence_service::{send_license},
-    user::user_service::UserService,
-
-    tools::tool_service::{
-        ToolsService,
-        save_tool,
-        fetch_tool_list,
-        delete_tool
+    api::{
+        licence_api::send_license,
+        tools_api::{delete_tool, fetch_tool_list, save_tool},
+        project_api::{delete_project,
+                      fetch_project_list,
+                      get_project_by_id,
+                      save_project,
+                      handle_template_and_files,
+                      fetch_supported_template_list
+        }
     },
-    projects::project_service::{
-        ProjectService,
-        delete_project,
-        save_project,
-        fetch_project_list,
-        get_project_by_id,
+    service::{
+        projects::project_service::{ProjectService},
+        tools::tool_service::{ToolsService},
+        user::user_service::UserService,
     },
 };
 
 
 
-use connections::db::{init_pool};
-
 pub struct AppState {
     pub db_pool: diesel::r2d2::Pool<ConnectionManager<SqliteConnection>>,
     pub user_service: UserService,
     pub tools_service: ToolsService,
-    pub project_service: ProjectService
+    pub project_service: ProjectService,
 }
-
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-
     dotenv::dotenv().ok();
     // 初始化连接池
     let db_pool = init_pool();
-    let user_service = UserService::new(db_pool.clone());  // 初始化 UserService
-    let tools_service = ToolsService::new(db_pool.clone());  // 初始化 ToolsService
-    let project_service = ProjectService::new(db_pool.clone());  // 初始化 ToolsService
+    let user_service = UserService::new(db_pool.clone()); // 初始化 UserService
+    let tools_service = ToolsService::new(db_pool.clone()); // 初始化 ToolsService
+    let project_service = ProjectService::new(db_pool.clone()); // 初始化 ToolsService
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -109,17 +118,24 @@ pub fn run() {
             }
             Ok(())
         })
-        .manage(AppState { db_pool, user_service, tools_service, project_service})
+        .manage(AppState {
+            db_pool,
+            user_service,
+            tools_service,
+            project_service,
+        })
         .invoke_handler(tauri::generate_handler![
             send_license,
             save_tool,
             fetch_tool_list,
             delete_tool,
-
             fetch_project_list,
             save_project,
             delete_project,
-            get_project_by_id, // 注册新的命令
+            get_project_by_id,
+
+            handle_template_and_files,
+            fetch_supported_template_list
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,7 +1,7 @@
-use diesel::prelude::*;
-use diesel::r2d2::{Pool, ConnectionManager};
-use crate::models::tools::tools_model::{Tool, NewTool};
 use crate::models::tools::schema::tools::dsl::*;
+use crate::models::tools::tools_model::{NewTool, Tool};
+use diesel::prelude::*;
+use diesel::r2d2::{ConnectionManager, Pool};
 
 #[derive(Debug)]
 pub struct Pagination {
@@ -24,7 +24,10 @@ impl ToolsRepository {
             .values(&new_tool)
             .execute(&mut conn)
             .map_err(|e| e.to_string())?;
-        tools.order(id.desc()).first(&mut conn).map_err(|e| e.to_string())
+        tools
+            .order(id.desc())
+            .first(&mut conn)
+            .map_err(|e| e.to_string())
     }
 
     pub fn read_tools(&self, pagination: Pagination) -> Result<Vec<Tool>, String> {
@@ -36,7 +39,7 @@ impl ToolsRepository {
         // 使用 offset 和 limit 进行分页查询
         tools
             .order(id.asc()) // 按 id 升序排序
-            .offset(offset)  // 跳过前面的记录
+            .offset(offset) // 跳过前面的记录
             .limit(pagination.page_size) // 限制每页的记录数
             .load::<Tool>(&mut conn)
             .map_err(|e| e.to_string())
@@ -60,10 +63,11 @@ impl ToolsRepository {
     }
 
     pub fn find_tool_by_url(&self, tool_url: &str) -> Result<Option<Tool>, String> {
-        use crate::models::tools::schema::tools::dsl::{tools, link_url}; // 导入表名和列名
+        use crate::models::tools::schema::tools::dsl::{link_url, tools}; // 导入表名和列名
 
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
-        tools.filter(link_url.eq(tool_url)) // 使用正确的表名和列名
+        tools
+            .filter(link_url.eq(tool_url)) // 使用正确的表名和列名
             .first::<Tool>(&mut conn)
             .optional()
             .map_err(|e| e.to_string())

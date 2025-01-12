@@ -58,27 +58,14 @@
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">选择 Query Detail 文件</label>
           <div class="mt-1 flex items-center">
-            <input
-                type="file"
-                ref="queryDetailInput"
-                @change="(event) => handleFileSelect(event, 'queryDetail')"
-                class="hidden"
-            />
             <button
-                @click="triggerFileInput('queryDetail')"
+                @click="selectFile('queryDetail')"
                 class="px-4 py-2 bg-purple-800 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               选择文件
             </button>
-            <button
-                v-if="selectedFiles.queryDetail"
-                @click="previewFile('queryDetail')"
-                class="ml-2 p-2 text-purple-800 hover:text-purple-700 focus:outline-none"
-            >
-              👁️
-            </button>
             <p v-if="selectedFiles.queryDetail" class="ml-4 text-sm text-gray-500">
-              已选择文件: {{ selectedFiles.queryDetail.name }}
+              已选择文件: {{ selectedFiles.queryDetail }}
             </p>
           </div>
         </div>
@@ -87,27 +74,14 @@
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">选择 Data Clean Progress 文件</label>
           <div class="mt-1 flex items-center">
-            <input
-                type="file"
-                ref="dataCleanProgressInput"
-                @change="(event) => handleFileSelect(event, 'dataCleanProgress')"
-                class="hidden"
-            />
             <button
-                @click="triggerFileInput('dataCleanProgress')"
+                @click="selectFile('dataCleanProgress')"
                 class="px-4 py-2 bg-purple-800 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               选择文件
             </button>
-            <button
-                v-if="selectedFiles.dataCleanProgress"
-                @click="previewFile('dataCleanProgress')"
-                class="ml-2 p-2 text-purple-800 hover:text-purple-700 focus:outline-none"
-            >
-              👁️
-            </button>
             <p v-if="selectedFiles.dataCleanProgress" class="ml-4 text-sm text-gray-500">
-              已选择文件: {{ selectedFiles.dataCleanProgress.name }}
+              已选择文件: {{ selectedFiles.dataCleanProgress }}
             </p>
           </div>
         </div>
@@ -116,27 +90,14 @@
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">选择 Missing Page 文件</label>
           <div class="mt-1 flex items-center">
-            <input
-                type="file"
-                ref="missingPageInput"
-                @change="(event) => handleFileSelect(event, 'missingPage')"
-                class="hidden"
-            />
             <button
-                @click="triggerFileInput('missingPage')"
+                @click="selectFile('missingPage')"
                 class="px-4 py-2 bg-purple-800 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               选择文件
             </button>
-            <button
-                v-if="selectedFiles.missingPage"
-                @click="previewFile('missingPage')"
-                class="ml-2 p-2 text-purple-800 hover:text-purple-700 focus:outline-none"
-            >
-              👁️
-            </button>
             <p v-if="selectedFiles.missingPage" class="ml-4 text-sm text-gray-500">
-              已选择文件: {{ selectedFiles.missingPage.name }}
+              已选择文件: {{ selectedFiles.missingPage }}
             </p>
           </div>
         </div>
@@ -177,26 +138,15 @@
           确认导入
         </button>
       </div>
-
-      <!-- 文件预览模态框 -->
-      <FilePreviewModal
-          :is-visible="isPreviewVisible"
-          :file-data="previewFileData"
-          @close="closePreview"
-      />
     </div>
   </div>
 </template>
 
 <script>
-import * as XLSX from 'xlsx'; // 导入 xlsx 库
-import FilePreviewModal from '@/components/FilePreviewModal.vue'; // 导入文件预览组件
+import { open } from '@tauri-apps/plugin-dialog'; // 导入 Tauri 的 dialog API
 
 export default {
   name: 'DrawerForm',
-  components: {
-    FilePreviewModal,
-  },
   props: {
     isOpen: {
       type: Boolean,
@@ -207,15 +157,13 @@ export default {
     return {
       currentStep: 1,
       templateType: '',
-      templateOptions: ['medidata'],
+      templateOptions: [],
       selectedFiles: {
-        queryDetail: null, // Query Detail 文件
-        dataCleanProgress: null, // Data Clean Progress 文件
-        missingPage: null, // Missing Page 文件
+        queryDetail: null, // Query Detail 文件路径
+        dataCleanProgress: null, // Data Clean Progress 文件路径
+        missingPage: null, // Missing Page 文件路径
       },
       error: '',
-      isPreviewVisible: false, // 控制文件预览模态框的显示
-      previewFileData: null, // 文件预览数据
     };
   },
   computed: {
@@ -229,20 +177,52 @@ export default {
     },
   },
   methods: {
-    // 关闭抽屉
+    // 关闭抽屉并清空内容
     close() {
-      this.$emit('close');
+      this.resetForm(); // 清空表单内容
+      this.$emit('close'); // 关闭抽屉
     },
-    // 触发文件选择
-    triggerFileInput(type) {
-      this.$refs[`${type}Input`].click();
+    // 获取支持的模板列表
+    async fetchSupportedTemplates() {
+      try {
+        const response = await this.$rustInvoke('fetch_supported_template_list');
+        this.templateOptions = response.templates; // 更新模板选项
+      } catch (error) {
+        console.error('获取支持的模板列表失败:', error);
+        this.error = '获取支持的模板列表失败，请重试';
+      }
     },
-    // 处理文件选择
-    handleFileSelect(event, type) {
-      const file = event.target.files[0];
-      if (file) {
-        this.selectedFiles[type] = file;
-        this.error = '';
+    // 清空表单内容
+    resetForm() {
+      this.currentStep = 1;
+      this.templateType = '';
+      this.selectedFiles = {
+        queryDetail: null,
+        dataCleanProgress: null,
+        missingPage: null,
+      };
+      this.error = '';
+    },
+    // 选择文件
+    async selectFile(type) {
+      try {
+        const file = await open({
+          multiple: false, // 是否允许多选
+          filters: [
+            {
+              name: 'Excel Files',
+              extensions: ['xlsx', 'xls', 'csv'], // 限制文件类型
+            },
+          ],
+        });
+
+        if (file) {
+          this.selectedFiles[type] = file; // 保存文件路径
+          this.error = '';
+        }
+      } catch (error) {
+        console.error('文件选择失败:', error);
+        this.error = '文件选择失败，请重试';
       }
     },
     // 下一步
@@ -255,53 +235,42 @@ export default {
         this.currentStep = 2;
       }
     },
-    // 预览文件
-    async previewFile(type) {
-      const file = this.selectedFiles[type];
-      if (file) {
-        if (file.size > 5 * 1024 * 1024) {
-          this.$showModal('文件过大，无法在线预览'); // 提示用户文件过大
-          return;
-        }
-        const data = await this.parseFile(file);
-        this.previewFileData = data;
-        this.isPreviewVisible = true; // 显示文件预览模态框
-      }
-    },
-    // 解析文件
-    async parseFile(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, {type: 'array'});
-          const sheetName = workbook.SheetNames[0];
-          const sheet = workbook.Sheets[sheetName];
-          const json = XLSX.utils.sheet_to_json(sheet, {header: 1});
-
-          const headers = json[0]; // 第一行为表头
-          const rows = json.slice(1); // 其余为数据行
-
-          resolve({headers, rows});
-        };
-        reader.onerror = (error) => reject(error);
-        reader.readAsArrayBuffer(file);
-      });
-    },
-    // 关闭文件预览
-    closePreview() {
-      this.isPreviewVisible = false;
-    },
     // 确认导入
-    confirmImport() {
-      this.$emit('confirm-import', this.selectedFiles);
-      this.close();
+    async confirmImport() {
+      try {
+        // 显示提醒
+        this.$showModal('分析任务正在运行，请稍后查看报告数据');
+
+        const result = await this.$rustInvoke('handle_template_and_files', {
+          templateName: this.templateType,
+          files: [
+            this.selectedFiles.queryDetail,
+            this.selectedFiles.dataCleanProgress,
+            this.selectedFiles.missingPage,
+          ],
+        });
+
+        if (result.valid) {
+          console.log('文件导入成功:', result);
+          this.$emit('confirm-import', [result.data]);
+          this.close(); // 关闭抽屉并清空内容
+        } else {
+          this.error = '文件导入失败，请重试';
+        }
+      } catch (error) {
+        console.error('文件导入失败:', error);
+        this.error = '文件导入失败，请重试';
+      }
     },
     prevStep() {
       if (this.currentStep > 1) {
         this.currentStep--; // 返回上一步
       }
     },
+  },
+  // 在组件挂载时获取支持的模板列表
+  mounted() {
+    this.fetchSupportedTemplates();
   },
 };
 </script>

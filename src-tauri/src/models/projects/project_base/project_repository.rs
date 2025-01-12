@@ -1,13 +1,13 @@
 // project_repository.rs
-use diesel::prelude::*;
-use diesel::r2d2::{Pool, ConnectionManager};
-use crate::models::projects::project_base::project_model::{Project, NewProject};
+use crate::models::projects::project_base::project_model::{NewProject, Project};
 use crate::models::projects::project_base::schema::projects::dsl::*;
+use diesel::prelude::*;
+use diesel::r2d2::{ConnectionManager, Pool};
 
 #[derive(Debug)]
 pub struct Pagination {
-    pub current_page: i64, // 当前页码
-    pub page_size: i64,    // 每页大小
+    pub current_page: i64,       // 当前页码
+    pub page_size: i64,          // 每页大小
     pub keyword: Option<String>, // 可选的 keyword 参数，用于模糊检索
 }
 
@@ -27,7 +27,10 @@ impl ProjectRepository {
             .values(&new_project)
             .execute(&mut conn)
             .map_err(|e| e.to_string())?;
-        projects.order(id.desc()).first(&mut conn).map_err(|e| e.to_string())
+        projects
+            .order(id.desc())
+            .first(&mut conn)
+            .map_err(|e| e.to_string())
     }
 
     // 分页查询项目（支持 keyword 检索）
@@ -49,7 +52,7 @@ impl ProjectRepository {
         // 执行分页查询
         query
             .order(id.asc()) // 按 id 升序排序
-            .offset(offset)  // 跳过前面的记录
+            .offset(offset) // 跳过前面的记录
             .limit(pagination.page_size) // 限制每页的记录数
             .load::<Project>(&mut conn)
             .map_err(|e| e.to_string())
