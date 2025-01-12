@@ -1,23 +1,24 @@
-// project_report_model.rs
 use serde::{Deserialize, Serialize};
 use diesel::prelude::*;
+
 #[derive(Queryable, Serialize, Deserialize, Debug)]
-pub struct ProjectReport {
+pub struct ProjectReportSource {
     pub id: i32,
     pub project_number: String,
     pub report_number: String,
-    pub state: i32,
+    pub source_file_name: String,
+    pub source_file_type: String,
     pub create_time: String,
     pub update_time: String,
 }
 
-// project_report_model.rs
 #[derive(Insertable,AsChangeset, Serialize, Deserialize, Debug)]
-#[diesel(table_name = crate::models::projects::project_report::schema::project_report)]
-pub struct NewProjectReport {
+#[diesel(table_name = crate::models::projects::project_report::schema::project_report_source)]
+pub struct NewProjectReportSource {
     pub project_number: String,
     pub report_number: String,
-    pub state: i32,
+    pub source_file_name: String,
+    pub source_file_type: String,
     pub create_time: String,
     pub update_time: String,
 }

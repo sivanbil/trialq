@@ -1,0 +1,90 @@
+# missing page的字段配置
+- name: "Study"
+  alias: "study"
+  data_type: "string"
+  required: true
+
+- name: "SiteName"
+  alias: "site_name"
+  data_type: "string"
+  required: true
+
+- name: "StudyEnvironmentSiteNumber"
+  alias: "study_environment_site"
+  data_type: "string"
+  required: true
+
+- name: "SubjectName"
+  alias: "subject_name"
+  data_type: "string"
+  required: true
+
+- name: "Folder"
+  alias: "folder"
+  data_type: "string"
+  required: true
+
+- name: "Form"
+  alias: "form"
+  data_type: "string"
+  required: true
+
+- name: "LOG#"
+  alias: "log_id"
+  data_type: "string"
+  required: true
+
+- name: "QryOpenDate"
+  alias: "qry_open_date"
+  data_type: "string"
+  required: true
+
+- name: "QryOpenDateLocalized"
+  alias: "qry_open_date_localized"
+  data_type: "string"
+  required: true
+
+- name: "QryOpenBy"
+  alias: "qyr_open_by"
+  data_type: "string"
+  required: true
+
+- name: "QueryText"
+  alias: "query_text"
+  data_type: "string"
+  required: true
+
+- name: "MarkingGroupName"
+  alias: "marking_group_name"
+  data_type: "string"
+  required: true
+
+- name: "QryResponseDate"
+  alias: "qry_response_date"
+  data_type: "string"
+  required: true
+
+- name: "QryResponseDateLocalized"
+  alias: "qry_response_date_localized"
+  data_type: "string"
+  required: true
+
+- name: "QryRespndBy"
+  alias: "qry_response_user"
+  data_type: "string"
+  required: true
+
+- name: "AnswerText"
+  alias: "qry_answer"
+  data_type: "string"
+  required: true
+
+- name: "Name"
+  alias: "qry_status"
+  data_type: "string"
+  required: true
+
+- name: "QryOpenDateLocalized"
+  alias: "log_id"
+  data_type: "string"
+  required: true

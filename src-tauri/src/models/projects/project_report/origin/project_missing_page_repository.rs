@@ -1,6 +1,6 @@
 // project_missing_page_repository.rs
-use crate::models::projects::project_report::origin::project_missing_page::project_missing_page_model::{NewProjectMissingPage, ProjectMissingPage};
-use crate::models::projects::project_report::origin::project_missing_page::schema::project_missing_page::dsl::*;
+use crate::models::projects::project_report::origin::project_missing_page_model::{NewProjectMissingPage, ProjectMissingPage};
+use crate::models::projects::project_report::origin::schema::project_missing_page::dsl::*;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 
@@ -27,10 +27,10 @@ impl ProjectMissingPageRepository {
     }
 
     // 根据报告编号查询缺失页面记录
-    pub fn find_missing_pages_by_report_number(&self, report_number: &str) -> Result<Vec<ProjectMissingPage>, String> {
+    pub fn find_missing_pages_by_report_number(&self, report_no: &str) -> Result<Vec<ProjectMissingPage>, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
         project_missing_page
-            .filter(report_number.eq(report_number))
+            .filter(report_number.eq(report_no))
             .load::<ProjectMissingPage>(&mut conn)
             .map_err(|e| e.to_string())
     }

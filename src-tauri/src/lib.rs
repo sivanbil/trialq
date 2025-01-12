@@ -3,66 +3,11 @@ use diesel::SqliteConnection;
 // 导入第三方工具依赖包
 use dotenv;
 
-
-
-pub mod models {
-    pub mod user {
-        pub mod schema;
-
-        pub mod user_model;
-
-        pub mod user_repository;
-    }
-
-    pub mod tools {
-        pub mod tools_model;
-
-        pub mod tools_repository;
-
-        pub mod schema;
-    }
-
-    pub mod projects {
-        pub mod project_base {
-            pub mod project_model;
-            pub mod project_repository;
-            pub mod schema;
-        }
-    }
-}
-pub mod core {
-    pub mod connections;
-    pub mod excel_process_engine;
-}
+pub mod models;
+pub mod core;
 
 // 导入需要包漏出去的函数所在包
-pub mod modules {
-    pub mod api {
-        pub mod project_api;
-
-        pub mod tools_api;
-
-        pub mod licence_api;
-    }
-
-    pub mod service {
-
-        pub mod user {
-            pub mod user_service;
-        }
-
-        pub mod tools {
-            pub mod tool_service;
-        }
-
-        pub mod projects {
-            pub mod project_service;
-        }
-        pub mod enums;
-    }
-
-
-}
+pub mod modules;
 
 use core::{
     connections::db::init_pool

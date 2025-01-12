@@ -1,4 +1,5 @@
 // schema.rs
+use diesel::prelude::*;
 table! {
     project_query_detail (id) {
         id -> Integer,

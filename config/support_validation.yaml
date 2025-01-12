@@ -1,0 +1,10 @@
+# 支持哪些格式的自定义校验
+validations:
+  - name: ">7"
+    rule: "(tonumber(value) or 0) > 7"
+  - name: ">14"
+    rule: "(tonumber(value) or 0) > 14"
+  - name: "＞21"
+    rule: "(tonumber(value) or 0) > 21"
+  - name: "≥30"
+    rule: "(tonumber(value) or 0) >= 30"

@@ -1,6 +1,6 @@
 // project_report_extend_data_repository.rs
-use crate::models::projects::project_report_extend_data::project_report_extend_data_model::{NewProjectReportExtendData, ProjectReportExtendData};
-use crate::models::projects::project_report_extend_data::schema::project_report_extend_data::dsl::*;
+use crate::models::projects::project_report::project_report_extend_data_model::{NewProjectReportExtendData, ProjectReportExtendData};
+use crate::models::projects::project_report::schema::project_report_extend_data::dsl::*;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 

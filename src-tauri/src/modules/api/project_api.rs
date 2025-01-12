@@ -1,9 +1,4 @@
-use std::time::SystemTime;
 use crate::AppState;
-use date_formatter::utils::{format_date, DateFormat};
-use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::SqliteConnection;
-use serde::{Deserialize, Serialize};
 use tauri::State;
 use crate::modules::{
     service::{
@@ -87,13 +82,13 @@ pub async fn handle_template_and_files(
         println!("File {}: {}", index + 1, file_path);
     }
 
-    project_service.async_process_excel_files(files, template_name)
+    project_service.async_process_excel_files(files)
 }
 
 
 #[tauri::command]
 pub async fn fetch_supported_template_list(
-    state: State<'_, AppState>, // 从状态中获取 AppState
+    _state: State<'_, AppState>, // 从状态中获取 AppState
 ) -> Result<SupportedTemplateResponse, String> {
     // 获取所有支持的模板名称
     let templates = SupportedTemplate::all_supported_templates();

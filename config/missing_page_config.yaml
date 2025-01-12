@@ -1,0 +1,36 @@
+# missing page的字段配置
+- name: "Project Name"
+  alias: "project_name"
+  data_type: "string"
+  required: true
+- name: "Site Name"
+  alias: "site_name"
+  data_type: "string"
+  required: true
+- name: "Site Number"
+  alias: "site_number"
+  data_type: "string"
+  required: true
+- name: "Subject ID"
+  alias: "subject_id"
+  data_type: "string"
+  required: true
+- name: "Instance Name"
+  alias: "instance_name"
+  data_type: "string"
+  required: true
+- name: "Data Page Name"
+  alias: "data_page_name"
+  data_type: "string"
+  required: true
+- name: "Days of Missing Pages"
+  alias: "days_of_missing_pages"
+  data_type: "string"
+  required: true
+  custom_validation:
+    - title: "大于7天"
+      alias: "MP_gt_7days"
+      rule: "(tonumber(value) or 0) > 7"
+    - title: "大于14天"
+      alias: "MP_gt_14days"
+      rule: "(tonumber(value) or 0) > 14"

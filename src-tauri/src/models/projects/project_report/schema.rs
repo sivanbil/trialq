@@ -1,4 +1,5 @@
 // schema.rs
+use diesel::prelude::*;
 table! {
     project_report (id) {
         id -> Integer,
@@ -44,13 +45,14 @@ table! {
         op_gt30 -> Integer,
     }
 }
-
-// 定义表之间的关系
-joinable!(project_report_data -> project_report (report_number));
-joinable!(project_report_extend_data -> project_report_data (project_report_data_id));
-
-allow_tables_to_appear_in_same_query!(
-    project_report,
-    project_report_data,
-    project_report_extend_data,
-);
+table! {
+    project_report_source (id) {
+        id -> Integer,
+        project_number -> Text,
+        report_number -> Text,
+        source_file_name -> Text,
+        source_file_type -> Text,
+        create_time -> Text,
+        update_time -> Text,
+    }
+}

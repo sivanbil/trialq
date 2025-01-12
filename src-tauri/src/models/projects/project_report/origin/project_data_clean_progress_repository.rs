@@ -1,6 +1,6 @@
 // project_data_clean_progress_repository.rs
-use crate::models::projects::project_report::origin::project_data_clean_progress::project_data_clean_progress_model::{NewProjectDataCleanProgress, ProjectDataCleanProgress};
-use crate::models::projects::project_report::origin::project_data_clean_progress::schema::project_data_clean_progress::dsl::*;
+use crate::models::projects::project_report::origin::project_data_clean_progress_model::{NewProjectDataCleanProgress, ProjectDataCleanProgress};
+use crate::models::projects::project_report::origin::schema::project_data_clean_progress::dsl::*;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 
@@ -27,10 +27,10 @@ impl ProjectDataCleanProgressRepository {
     }
 
     // 根据报告编号查询数据清理进度
-    pub fn find_data_clean_progress_by_report_number(&self, report_number: &str) -> Result<Vec<ProjectDataCleanProgress>, String> {
+    pub fn find_data_clean_progress_by_report_number(&self, report_no: &str) -> Result<Vec<ProjectDataCleanProgress>, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
         project_data_clean_progress
-            .filter(report_number.eq(report_number))
+            .filter(report_number.eq(report_no))
             .load::<ProjectDataCleanProgress>(&mut conn)
             .map_err(|e| e.to_string())
     }

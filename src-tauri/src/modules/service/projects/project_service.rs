@@ -2,12 +2,10 @@ use std::time::SystemTime;
 // project_service.rs
 use crate::models::projects::project_base::project_model::{NewProject, Project};
 use crate::models::projects::project_base::project_repository::{Pagination, ProjectRepository};
-use crate::AppState;
-use date_formatter::utils::{format_date, DateFormat};
+use date_formatter::utils::{format_date};
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::SqliteConnection;
-use serde::{Deserialize, Serialize};
-use tauri::State;
+use serde::{ Serialize};
 
 #[derive(Serialize)]
 pub struct DeleteProjectResponse {
@@ -227,7 +225,7 @@ impl ProjectService {
         }
     }
 
-    pub fn async_process_excel_files(&self, files: Vec<String>, template_name: String) -> Result<Response, String> {
+    pub fn async_process_excel_files(&self, files: Vec<String>) -> Result<Response, String> {
         // 模拟处理逻辑
         let project_name = "Example Project".to_string();
         let report_number = "REPORT-12345".to_string();

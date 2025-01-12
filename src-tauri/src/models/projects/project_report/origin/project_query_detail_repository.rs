@@ -1,6 +1,6 @@
 // project_query_detail_repository.rs
-use crate::models::projects::project_report::origin::project_query_detail::project_query_detail_model::{NewProjectQueryDetail, ProjectQueryDetail};
-use crate::models::projects::project_report::origin::project_query_detail::schema::project_query_detail::dsl::*;
+use crate::models::projects::project_report::origin::project_query_detail_model::{NewProjectQueryDetail, ProjectQueryDetail};
+use crate::models::projects::project_report::origin::schema::project_query_detail::dsl::*;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 
@@ -27,10 +27,10 @@ impl ProjectQueryDetailRepository {
     }
 
     // 根据报告编号查询查询详情
-    pub fn find_query_details_by_report_number(&self, report_number: &str) -> Result<Vec<ProjectQueryDetail>, String> {
+    pub fn find_query_details_by_report_number(&self, report_no: &str) -> Result<Vec<ProjectQueryDetail>, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
         project_query_detail
-            .filter(report_number.eq(report_number))
+            .filter(report_number.eq(report_no))
             .load::<ProjectQueryDetail>(&mut conn)
             .map_err(|e| e.to_string())
     }

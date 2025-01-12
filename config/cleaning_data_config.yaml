@@ -1,0 +1,28 @@
+- name: "Study"
+  alias: 'study'
+  data_type: "string"
+  required: true
+- name: "Site"
+  alias: 'site'
+  data_type: "string"
+  required: true
+- name: "subject"
+  alias: 'study'
+  data_type: "string"
+  required: true
+- name: "Folder name"
+  alias: 'folder_name'
+  data_type: "string"
+  required: true
+- name: "Page"
+  alias: 'page'
+  data_type: "string"
+  required: true
+- name: "Entered"
+  alias: 'entered'
+  data_type: "integer"
+  required: true
+- name: "Verify Required"
+  alias: 'verify_required'
+  data_type: "integer"
+  required: true

@@ -1,6 +1,6 @@
 // project_report_data_repository.rs
-use crate::models::projects::project_report_data::project_report_data_model::{NewProjectReportData, ProjectReportData};
-use crate::models::projects::project_report_data::schema::project_report_data::dsl::*;
+use crate::models::projects::project_report::project_report_data_model::{NewProjectReportData, ProjectReportData};
+use crate::models::projects::project_report::schema::project_report_data::dsl::*;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 
@@ -27,10 +27,10 @@ impl ProjectReportDataRepository {
     }
 
     // 根据站点查询报告数据
-    pub fn find_reports_by_site(&self, site: &str) -> Result<Vec<ProjectReportData>, String> {
+    pub fn find_reports_by_site(&self, site_str: &str) -> Result<Vec<ProjectReportData>, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
         project_report_data
-            .filter(site.eq(site))
+            .filter(site.eq(site_str))
             .load::<ProjectReportData>(&mut conn)
             .map_err(|e| e.to_string())
     }

@@ -1,7 +1,7 @@
 
 // project_query_detail_model.rs
 use serde::{Deserialize, Serialize};
-
+use diesel::prelude::*;
 #[derive(Queryable, Serialize, Deserialize, Debug)]
 pub struct ProjectQueryDetail {
     pub id: i32,
@@ -26,8 +26,8 @@ pub struct ProjectQueryDetail {
 }
 
 // project_query_detail_model.rs
-#[derive(Insertable, Serialize, Deserialize, Debug)]
-#[diesel(table_name = project_query_detail)]
+#[derive(Insertable,AsChangeset, Serialize, Deserialize, Debug)]
+#[diesel(table_name = crate::models::projects::project_report::origin::schema::project_query_detail)]
 pub struct NewProjectQueryDetail {
     pub study: String,
     pub site_name: String,

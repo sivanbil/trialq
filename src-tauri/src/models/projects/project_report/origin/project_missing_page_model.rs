@@ -1,5 +1,6 @@
 // project_missing_page_model.rs
 use serde::{Deserialize, Serialize};
+use diesel::prelude::*;
 
 #[derive(Queryable, Serialize, Deserialize, Debug)]
 pub struct ProjectMissingPage {
@@ -17,8 +18,8 @@ pub struct ProjectMissingPage {
 }
 
 // project_missing_page_model.rs
-#[derive(Insertable, Serialize, Deserialize, Debug)]
-#[diesel(table_name = project_missing_page)]
+#[derive(Insertable,AsChangeset, Serialize, Deserialize, Debug)]
+#[diesel(table_name = crate::models::projects::project_report::origin::schema::project_missing_page)]
 pub struct NewProjectMissingPage {
     pub project_name: String,
     pub site_name: String,
