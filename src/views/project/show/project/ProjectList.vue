@@ -27,7 +27,10 @@
     <!-- 项目列表 -->
     <div>
       <h2 class="text-lg font-semibold mb-4">项目列表</h2>
-      <ul class="space-y-4">
+      <div class="text-center py-6 text-gray-500" v-if="!projects || projects.length === 0">
+        没有任何项目数据，请添加下
+      </div>
+      <ul v-else class="space-y-4">
         <li
             v-for="(project, index) in projects"
             :key="index"
@@ -41,8 +44,9 @@
             <div class="flex space-x-2">
               <button
                   class="px-3 py-1 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  @click="viewRelatedReportList(index)"
               >
-                查看相关报告数据
+                查看相关数据报告
               </button>
 
               <button
@@ -84,18 +88,27 @@
         @save="handleSave"
     />
   </div>
+
+  <SlotDialog :showConfirm="false" :isOpen="isDialogOpen" title="演示" @close="closeDialog">
+    <ReportList project-number="222222"/>
+  </SlotDialog>
 </template>
 
 <script>
-import ProjectFormDrawer from './ProjectDrawerForm.vue'; // 引入抽屉表单组件
+import ProjectFormDrawer from './ProjectDrawerForm.vue';
+import SlotDialog from "@/components/SlotDialog.vue";
+import ReportList from "@/views/project/show/project/ReportList.vue"; // 引入抽屉表单组件
 
 export default {
   name: 'ProjectList',
   components: {
+    ReportList,
+    SlotDialog,
     ProjectFormDrawer,
   },
   data() {
     return {
+      isDialogOpen: false,
       // 项目列表
       projects: [],
       // 分页相关
@@ -137,6 +150,11 @@ export default {
         name: '',
         description: '',
       };
+    },
+
+    viewRelatedReportList(index) {
+      console.log(index);
+      this.openDialog()
     },
     // 处理保存
     async handleSave(project) {
@@ -212,6 +230,13 @@ export default {
         this.currentPage++;
         this.fetchProjects();
       }
+    },
+    openDialog() {
+      this.isDialogOpen = true;
+    },
+    // 关闭对话框
+    closeDialog() {
+      this.isDialogOpen = false;
     },
   },
 };

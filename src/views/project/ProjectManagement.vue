@@ -27,7 +27,7 @@
         <!-- 第一个标签页：数据工作平台和更多管理 -->
         <div v-if="activeTab === 1">
           <!-- DashBoard 组件 -->
-          <DashBoard />
+          <ImportExcel />
 
         </div>
 
@@ -47,14 +47,14 @@
 </template>
 
 <script>
-import DashBoard from './show/dashboard/DashBoard.vue'; // 导入 DashBoard 组件
+import ImportExcel from '@/views/project/show/import/ImportExcel.vue'; // 导入 DashBoard 组件
 import ProjectList from "./show/project/ProjectList.vue";
 
 export default {
   name: 'ProjectManagement',
   components: {
     ProjectList,
-    DashBoard, // 注册 DashBoard 组件
+    ImportExcel, // 注册 DashBoard 组件
   },
   data() {
     return {
