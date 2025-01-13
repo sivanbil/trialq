@@ -3,13 +3,7 @@ use crate::models::projects::project_base::project_model::{NewProject, Project};
 use crate::models::projects::project_base::schema::projects::dsl::*;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
-
-#[derive(Debug)]
-pub struct Pagination {
-    pub current_page: i64,       // 当前页码
-    pub page_size: i64,          // 每页大小
-    pub keyword: Option<String>, // 可选的 keyword 参数，用于模糊检索
-}
+use crate::models::projects::Pagination;
 
 pub struct ProjectRepository {
     pool: Pool<ConnectionManager<SqliteConnection>>, // 使用 SqliteConnection

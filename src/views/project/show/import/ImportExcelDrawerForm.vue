@@ -4,7 +4,7 @@
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end"
       @click.self="close"
   >
-    <div class="bg-white w-2/3 h-full p-6 overflow-y-auto">
+    <div class="bg-white w-11/12 h-full p-6 overflow-y-auto">
       <h3 class="text-xl font-semibold mb-4">导入表格</h3>
 
       <!-- Step 步骤条 -->
@@ -17,7 +17,7 @@
               'text-gray-500': currentStep !== 1,
             }"
           >
-            步骤 1: 选择模板
+            步骤 1: 选择项目
           </div>
           <div
               class="flex-1 text-center"
@@ -26,37 +26,90 @@
               'text-gray-500': currentStep !== 2,
             }"
           >
-            步骤 2: 选择文件
+            步骤 2: 选择模板
+          </div>
+          <div
+              class="flex-1 text-center"
+              :class="{
+              'text-purple-800': currentStep === 3,
+              'text-gray-500': currentStep !== 3,
+            }"
+          >
+            步骤 3: 选择数据文件
+          </div>
+          <div
+              class="flex-1 text-center"
+              :class="{
+              'text-purple-800': currentStep === 4,
+              'text-gray-500': currentStep !== 4,
+            }"
+          >
+            步骤 4: 数据分析
           </div>
         </div>
         <div class="mt-2 h-1 bg-gray-200 rounded-full">
           <div
               class="h-1 bg-purple-800 rounded-full transition-all"
-              :style="{ width: currentStep === 1 ? '50%' : '100%' }"
+              :style="{
+              width:
+                currentStep === 1
+                  ? '25%'
+                  : currentStep === 2
+                  ? '50%'
+                  : currentStep === 3
+                  ? '75%'
+                  : '100%',
+            }"
           ></div>
         </div>
       </div>
 
-      <!-- Step 1: 选择模板类型 -->
+      <!-- Step 1: 选择项目 -->
       <div v-if="currentStep === 1">
-        <label class="block text-sm font-medium text-gray-700 mb-2">选择模板类型</label>
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+        >选择项目</label
+        >
+        <select
+            v-model="project"
+            @change="fetchSupportedTemplates"
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+        >
+          <option value="" disabled>请选择项目</option>
+          <option v-for="option in projectOptions" :key="option.id" :value="option.project_name">
+            {{ option.project_name }}
+          </option>
+        </select>
+        <p v-if="error" class="text-sm text-red-500 mt-2">{{ error }}</p>
+      </div>
+
+      <!-- Step 2: 选择模板类型 -->
+      <div v-if="currentStep === 2">
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+        >选择模板类型</label
+        >
         <select
             v-model="templateType"
             class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
         >
           <option value="" disabled>请选择模板类型</option>
-          <option v-for="option in templateOptions" :key="option" :value="option">
+          <option
+              v-for="option in templateOptions"
+              :key="option"
+              :value="option"
+          >
             {{ option }}
           </option>
         </select>
         <p v-if="error" class="text-sm text-red-500 mt-2">{{ error }}</p>
       </div>
 
-      <!-- Step 2: 选择文件 -->
-      <div v-if="currentStep === 2">
+      <!-- Step 3: 选择文件 -->
+      <div v-if="currentStep === 3">
         <!-- Query Detail 文件选择 -->
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">选择 Query Detail 文件</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+          >选择 Query Detail 文件</label
+          >
           <div class="mt-1 flex items-center">
             <button
                 @click="selectFile('queryDetail')"
@@ -64,7 +117,10 @@
             >
               选择文件
             </button>
-            <p v-if="selectedFiles.queryDetail" class="ml-4 text-sm text-gray-500">
+            <p
+                v-if="selectedFiles.queryDetail"
+                class="ml-4 text-sm text-gray-500"
+            >
               已选择文件: {{ selectedFiles.queryDetail }}
             </p>
           </div>
@@ -72,7 +128,9 @@
 
         <!-- Data Clean Progress 文件选择 -->
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">选择 Data Clean Progress 文件</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+          >选择 Data Clean Progress 文件</label
+          >
           <div class="mt-1 flex items-center">
             <button
                 @click="selectFile('dataCleanProgress')"
@@ -80,7 +138,10 @@
             >
               选择文件
             </button>
-            <p v-if="selectedFiles.dataCleanProgress" class="ml-4 text-sm text-gray-500">
+            <p
+                v-if="selectedFiles.dataCleanProgress"
+                class="ml-4 text-sm text-gray-500"
+            >
               已选择文件: {{ selectedFiles.dataCleanProgress }}
             </p>
           </div>
@@ -88,7 +149,9 @@
 
         <!-- Missing Page 文件选择 -->
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">选择 Missing Page 文件</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+          >选择 Missing Page 文件</label
+          >
           <div class="mt-1 flex items-center">
             <button
                 @click="selectFile('missingPage')"
@@ -96,13 +159,31 @@
             >
               选择文件
             </button>
-            <p v-if="selectedFiles.missingPage" class="ml-4 text-sm text-gray-500">
+            <p
+                v-if="selectedFiles.missingPage"
+                class="ml-4 text-sm text-gray-500"
+            >
               已选择文件: {{ selectedFiles.missingPage }}
             </p>
           </div>
         </div>
 
         <p v-if="error" class="text-sm text-red-500 mt-2">{{ error }}</p>
+      </div>
+
+      <!-- Step 4: 数据分析 -->
+      <div v-if="currentStep === 4">
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+          >数据分析结果</label
+          >
+          <div class="mt-1">
+            <p v-if="analysisResult" class="text-sm text-gray-500">
+              {{ analysisResult }}
+            </p>
+            <p v-else class="text-sm text-gray-500">正在分析数据，请稍候...</p>
+          </div>
+        </div>
       </div>
 
       <!-- 操作按钮 -->
@@ -122,20 +203,23 @@
           取消
         </button>
         <button
-            v-if="currentStep < 2"
+            v-if="currentStep < 4"
             @click="nextStep"
-            :disabled="currentStep === 1 && !templateType"
+            :disabled="
+            (currentStep === 1 && !project) ||
+            (currentStep === 2 && !templateType) ||
+            (currentStep === 3 && !areFilesSelected)
+          "
             class="px-4 py-2 bg-purple-800 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           下一步
         </button>
         <button
-            v-if="currentStep === 2"
+            v-if="currentStep === 4"
             @click="confirmImport"
-            :disabled="!areFilesSelected"
-            class="px-4 py-2 bg-purple-800 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            class="px-4 py-2 bg-purple-800 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
-          确认导入
+          完成
         </button>
       </div>
     </div>
@@ -143,10 +227,10 @@
 </template>
 
 <script>
-import { open } from '@tauri-apps/plugin-dialog'; // 导入 Tauri 的 dialog API
+import { open } from "@tauri-apps/plugin-dialog"; // 导入 Tauri 的 dialog API
 
 export default {
-  name: 'DrawerForm',
+  name: "DrawerForm",
   props: {
     isOpen: {
       type: Boolean,
@@ -156,14 +240,17 @@ export default {
   data() {
     return {
       currentStep: 1,
-      templateType: '',
-      templateOptions: [],
+      project: "", // 当前选择的项目
+      projectOptions: [], // 项目列表
+      templateType: "", // 当前选择的模板类型
+      templateOptions: [], // 模板列表
       selectedFiles: {
         queryDetail: null, // Query Detail 文件路径
         dataCleanProgress: null, // Data Clean Progress 文件路径
         missingPage: null, // Missing Page 文件路径
       },
-      error: '',
+      analysisResult: "", // 数据分析结果
+      error: "",
     };
   },
   computed: {
@@ -180,28 +267,46 @@ export default {
     // 关闭抽屉并清空内容
     close() {
       this.resetForm(); // 清空表单内容
-      this.$emit('close'); // 关闭抽屉
+      this.$emit("close"); // 关闭抽屉
+    },
+    // 获取项目列表
+    async fetchProjects() {
+      try {
+        const response = await this.$rustInvoke("fetch_project_list", {
+          currentPage: 1,
+          pageSize: 100,
+          keyword: "",
+        });
+        this.projectOptions = response.projects; // 更新项目选项
+      } catch (error) {
+        console.error("获取项目列表失败:", error);
+        this.error = "获取项目列表失败，请重试";
+      }
     },
     // 获取支持的模板列表
     async fetchSupportedTemplates() {
       try {
-        const response = await this.$rustInvoke('fetch_supported_template_list');
+        const response = await this.$rustInvoke("fetch_supported_template_list", {
+          project: this.project, // 传递当前选择的项目
+        });
         this.templateOptions = response.templates; // 更新模板选项
       } catch (error) {
-        console.error('获取支持的模板列表失败:', error);
-        this.error = '获取支持的模板列表失败，请重试';
+        console.error("获取支持的模板列表失败:", error);
+        this.error = "获取支持的模板列表失败，请重试";
       }
     },
     // 清空表单内容
     resetForm() {
       this.currentStep = 1;
-      this.templateType = '';
+      this.project = "";
+      this.templateType = "";
       this.selectedFiles = {
         queryDetail: null,
         dataCleanProgress: null,
         missingPage: null,
       };
-      this.error = '';
+      this.analysisResult = "";
+      this.error = "";
     },
     // 选择文件
     async selectFile(type) {
@@ -210,38 +315,83 @@ export default {
           multiple: false, // 是否允许多选
           filters: [
             {
-              name: 'Excel Files',
-              extensions: ['xlsx', 'xls', 'csv'], // 限制文件类型
+              name: "Excel Files",
+              extensions: ["xlsx", "xls", "csv"], // 限制文件类型
             },
           ],
         });
 
         if (file) {
           this.selectedFiles[type] = file; // 保存文件路径
-          this.error = '';
+          this.error = ""; // 清空错误信息
         }
       } catch (error) {
-        console.error('文件选择失败:', error);
-        this.error = '文件选择失败，请重试';
+        console.error("文件选择失败:", error);
+        this.error = "文件选择失败，请重试";
       }
     },
     // 下一步
     async nextStep() {
       if (this.currentStep === 1) {
-        if (!this.templateType) {
-          this.error = '请选择模板类型';
+        if (!this.project) {
+          this.error = "请选择项目";
           return;
         }
         this.currentStep = 2;
+      } else if (this.currentStep === 2) {
+        if (!this.templateType) {
+          this.error = "请选择模板类型";
+          return;
+        }
+        this.currentStep = 3;
+      } else if (this.currentStep === 3) {
+        if (!this.areFilesSelected) {
+          this.error = "请选择所有文件";
+          return;
+        }
+        this.currentStep = 4;
+        this.analyzeData(); // 进入数据分析步骤
+      }
+      this.error = ""; // 清空错误信息
+    },
+    // 上一步
+    prevStep() {
+      if (this.currentStep > 1) {
+        this.currentStep--; // 返回上一步
+        this.error = ""; // 清空错误信息
+      }
+    },
+    // 数据分析
+    async analyzeData() {
+      try {
+        const result = await this.$rustInvoke("analyze_data", {
+          files: [
+            this.selectedFiles.queryDetail,
+            this.selectedFiles.dataCleanProgress,
+            this.selectedFiles.missingPage,
+          ],
+        });
+
+        if (result.valid) {
+          this.analysisResult = result.data; // 更新分析结果
+        } else {
+          this.error = "数据分析失败，请重试";
+        }
+      } catch (error) {
+        console.error("数据分析失败:", error);
+        this.error = "数据分析失败，请重试";
       }
     },
     // 确认导入
     async confirmImport() {
       try {
         // 显示提醒
-        this.$showModal('分析任务正在运行，请稍后查看报告数据');
+        const closeModal = this.$showModal("正在导入数据，请稍等片刻...", {
+          showCloseButton: false, // 隐藏关闭按钮
+        });
 
-        const result = await this.$rustInvoke('handle_template_and_files', {
+        const result = await this.$rustInvoke("handle_template_and_files", {
+          projectNumber: this.project, // 传递当前选择的项目
           templateName: this.templateType,
           files: [
             this.selectedFiles.queryDetail,
@@ -251,26 +401,25 @@ export default {
         });
 
         if (result.valid) {
-          console.log('文件导入成功:', result);
-          this.$emit('confirm-import', [result.data]);
+          console.log("文件导入成功:", result);
+          // 3 秒后自动关闭模态框
+          setTimeout(() => {
+            closeModal(); // 调用返回的 close 函数关闭模态框
+          }, 3000);
+          this.$emit("confirm-import", [result.data]);
           this.close(); // 关闭抽屉并清空内容
         } else {
-          this.error = '文件导入失败，请重试';
+          this.error = "文件导入失败，请重试";
         }
       } catch (error) {
-        console.error('文件导入失败:', error);
-        this.error = '文件导入失败，请重试';
-      }
-    },
-    prevStep() {
-      if (this.currentStep > 1) {
-        this.currentStep--; // 返回上一步
+        console.error("文件导入失败:", error);
+        this.error = "文件导入失败，请重试";
       }
     },
   },
-  // 在组件挂载时获取支持的模板列表
+  // 在组件挂载时获取项目列表
   mounted() {
-    this.fetchSupportedTemplates();
+    this.fetchProjects();
   },
 };
 </script>

@@ -23,7 +23,10 @@ app.component('HeaderView', HeaderView);
 app.component('GlobalModal', ModalContainer);
 
 // 定义全局函数
-app.config.globalProperties.$showModal = function (title, message) {
+app.config.globalProperties.$showModal = function (title, message, options = {}) {
+    // 默认选项
+    const { showCloseButton = true } = options;
+
     // 创建一个临时 div 来挂载模态框
     const modalContainer = document.createElement('div');
     document.body.appendChild(modalContainer);
@@ -33,6 +36,7 @@ app.config.globalProperties.$showModal = function (title, message) {
         visible: true,
         title: title,
         message: message,
+        showCloseButton: showCloseButton,
         onClose: () => {
             // 关闭模态框时销毁实例并移除 DOM
             modalInstance.unmount();
@@ -42,6 +46,12 @@ app.config.globalProperties.$showModal = function (title, message) {
 
     // 挂载模态框
     modalInstance.mount(modalContainer);
+
+    // 返回一个 close 函数，允许外部关闭模态框
+    return () => {
+        modalInstance.unmount();
+        document.body.removeChild(modalContainer);
+    };
 };
 
 

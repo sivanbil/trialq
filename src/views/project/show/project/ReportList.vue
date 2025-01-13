@@ -90,7 +90,7 @@ export default {
     filteredDataList() {
       let filteredList = this.dataList;
       if (this.projectNumber) {
-        filteredList = this.dataList.filter(item => item.projectNumber === this.projectNumber);
+        filteredList = this.dataList.filter(item => item.projectName === this.projectNumber);
       }
       // 分页逻辑
       const startIndex = (this.currentPage - 1) * this.pageSize;
@@ -115,6 +115,8 @@ export default {
       try {
         const response = await this.$rustInvoke('fetch_report_list', {
           projectNumber: this.projectNumber,
+          currentPage: this.currentPage,
+          pageSize: this.pageSize,
         });
         this.dataList = response.data || [];
         this.totalPages = Math.ceil(this.dataList.length / this.pageSize);

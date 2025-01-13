@@ -20,6 +20,8 @@ table! {
         qry_response_user -> Text,
         qry_answer -> Text,
         qry_status -> Text,
+        create_time -> Text,
+        update_time -> Text,
         report_number -> Text,
     }
 }

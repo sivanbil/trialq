@@ -6,7 +6,7 @@
       @click.self="closeDialog"
   >
     <!-- 对话框内容 -->
-    <div class="bg-white rounded-lg shadow-lg w-2/3 p-6">
+    <div class="bg-white rounded-lg shadow-lg w-11/12 p-6">
       <!-- 标题 -->
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-xl font-semibold">{{ title }}</h3>
@@ -37,6 +37,7 @@
       <div class="flex justify-end space-x-4">
         <button
             @click="closeDialog"
+            v-if="showCancel"
             class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-200"
         >
           取消
@@ -63,11 +64,16 @@ export default {
     },
     title: {
       type: String,
-      default: '对话框标题',
+      default: '操作提示',
     },
     showConfirm: {
       type: Boolean,
       required: true,
+    },
+    showCancel: {
+      type: Boolean,
+      required: false,
+      default: false,
     }
   },
   watch: {

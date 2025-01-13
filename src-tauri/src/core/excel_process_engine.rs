@@ -2,11 +2,7 @@ use calamine::{open_workbook, Reader, Xlsx, Xls};
 use csv::ReaderBuilder;
 use std::collections::HashMap;
 use std::error::Error;
-use std::fs::{self, File};
-use std::io::Write;
 use std::path::{Path, PathBuf};
-use dotenv::dotenv;
-use std::env;
 use mlua::Lua;
 use serde::{Serialize, Deserialize};
 use crate::CONFIG_DIR;
@@ -15,6 +11,7 @@ use crate::CONFIG_DIR;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct HeaderRule {
     name: String,                // 表头名称
+    alias: String, // 验证规则的别名（用于生成列名）
     data_type: String,           // 数据类型（number, string, date）
     required: bool,              // 是否必填
     #[serde(default)]            // 如果字段不存在，使用默认值
@@ -23,7 +20,7 @@ struct HeaderRule {
 
 // 定义自定义验证规则的结构体
 #[derive(Debug, Serialize, Deserialize, Clone)]
-struct CustomValidationRule {
+pub struct CustomValidationRule {
     title: String, // 验证规则的描述
     alias: String, // 验证规则的别名（用于生成列名）
     rule: String,  // 验证规则
@@ -34,10 +31,10 @@ struct CustomValidationRule {
 // 定义验证结果的结构体
 #[derive(Debug, Serialize)]
 pub struct ValidationResult {
-    data: HashMap<String, String>, // 解析的数据
+    pub data: HashMap<String, String>, // 解析的数据
     is_valid: bool,               // 是否通过验证
     errors: Vec<String>,          // 错误信息
-    custom_validation_results: Vec<CustomValidationRule>, // 自定义验证结果
+    pub custom_validation_results: Vec<CustomValidationRule>, // 自定义验证结果
 }
 
 // 定义验证规则的结构体
@@ -94,7 +91,8 @@ impl FileProcessor {
                         errors.push(format!("必填字段为空: {}", rule.name));
                     }
 
-                    row_data.insert(rule.name.clone(), value.clone());
+                    let new_column_name = format!("{}", rule.alias);
+                    row_data.insert(new_column_name, value.clone());
                     // 自定义验证
                     if let Some(validations) = &rule.custom_validation {
                         for validation in validations.iter() {
@@ -104,7 +102,7 @@ impl FileProcessor {
                             custom_validation_results.push(validation_result); // 存储验证结果
 
                             // 动态增加列
-                            let new_column_name = format!("{} {}", rule.name, validation.alias);
+                            let new_column_name = format!("{}", validation.alias);
                             let new_column_value = if is_ok { 1 } else { 0 };
                             row_data.insert(new_column_name, new_column_value.to_string());
                         }
@@ -225,11 +223,11 @@ impl FileProcessor {
         callback: F,
     ) -> Result<(), Box<dyn Error>>
     where
-        F: Fn(ValidationResult) -> (),
+        F: Fn(Vec<ValidationResult>, &str) -> (),
     {
         let file_path = PathBuf::from(file_path);
         let file_name = file_path.file_stem().unwrap().to_str().unwrap();
-        let validation_path = CONFIG_DIR.join(format!("{}.yaml", "support_validation_config"));
+        let validation_path = CONFIG_DIR.join(format!("{}.yaml", "support_validation"));
 
         let config_path = Self::get_config_path(file_name, &*CONFIG_DIR).map_err(|e| {
             format!("处理文件 {} 时出错: {}", file_path.display(), e)
@@ -246,10 +244,8 @@ impl FileProcessor {
             _ => return Err("不支持的文件格式".into()),
         };
 
-        // 将每个结果传递给回调函数
-        for result in results {
-            callback(result);
-        }
+        callback(results, file_name);
+
 
         Ok(())
     }

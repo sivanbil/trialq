@@ -3,6 +3,7 @@ use crate::models::projects::project_report::project_report_model::{NewProjectRe
 use crate::models::projects::project_report::schema::project_report::dsl::*;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
+use crate::models::projects::Pagination;
 
 pub struct ProjectReportRepository {
     pool: Pool<ConnectionManager<SqliteConnection>>, // 使用 SqliteConnection
@@ -69,6 +70,52 @@ impl ProjectReportRepository {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
         diesel::delete(project_report.find(report_id))
             .execute(&mut conn)
+            .map_err(|e| e.to_string())
+    }
+
+    // 分页查询项目（支持 keyword 检索）
+    pub fn find_project_reports_paginated(&self, pagination: Pagination) -> Result<Vec<ProjectReport>, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+
+        // 计算 offset
+        let offset = (pagination.current_page - 1) * pagination.page_size;
+
+        // 构建查询
+        let mut query = project_report.into_boxed();
+
+        // 如果提供了 keyword，则添加模糊匹配条件
+        if let Some(keyword) = pagination.keyword {
+            let search_pattern = format!("{}%", keyword); // 使用 % 实现模糊匹配
+            query = query.filter(project_number.like(search_pattern));
+        }
+
+        // 执行分页查询
+        query
+            .order(id.asc()) // 按 id 升序排序
+            .offset(offset) // 跳过前面的记录
+            .limit(pagination.page_size) // 限制每页的记录数
+            .load::<ProjectReport>(&mut conn)
+            .map_err(|e| e.to_string())
+    }
+
+    /// 根据项目编号统计报告总数
+    /// 如果 project_no 为空，统计所有报告的总数
+    pub fn count_reports_by_project_number(&self, project_no: Option<String>) -> Result<i64, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+
+        // 构建查询
+        let mut query = project_report.into_boxed();
+
+        // 如果提供了 keyword，则添加模糊匹配条件
+        if let Some(keyword) = project_no {
+            let search_pattern = format!("{}", keyword); // 使用 % 实现模糊匹配
+            query = query.filter(project_number.eq(search_pattern));
+        }
+
+        // 查询总记录数
+        query
+            .count()
+            .get_result(&mut conn)
             .map_err(|e| e.to_string())
     }
 }

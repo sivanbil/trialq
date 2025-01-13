@@ -3,7 +3,7 @@
     <div class="bg-white p-6 rounded-lg shadow-lg w-96">
       <h2 class="text-xl font-semibold mb-4">{{ title }}</h2>
       <p class="text-gray-700 mb-4">{{ message }}</p>
-      <div class="flex justify-end">
+      <div class="flex justify-end" v-if="showCloseButton">
         <button
             @click="close"
             class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
@@ -30,9 +30,14 @@ export default {
       type: String,
       default: '',
     },
+    showCloseButton: {
+      type: Boolean,
+      default: true, // 默认显示关闭按钮
+    },
     onClose: {
       type: Function,
-      default: () => {},
+      default: () => {
+      },
     },
   },
   methods: {

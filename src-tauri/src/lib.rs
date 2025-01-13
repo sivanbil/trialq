@@ -26,7 +26,8 @@ use modules::{
                       get_project_by_id,
                       save_project,
                       handle_template_and_files,
-                      fetch_supported_template_list
+                      fetch_supported_template_list,
+                      fetch_report_list
         }
     },
     service::{
@@ -53,10 +54,11 @@ pub struct AppState {
 lazy_static! {
     // 全局 CONFIG_DIR
     static ref CONFIG_DIR: PathBuf = {
-        let config_dir = env::var("CONFIG_DIR").expect("CONFIG_DIR 环境变量未设置");
+        let config_dir = env::var("CONFIG_PATH").expect("CONFIG_PATH 环境变量未设置");
         PathBuf::from(config_dir)
     };
 }
+
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -98,7 +100,8 @@ pub fn run() {
             get_project_by_id,
 
             handle_template_and_files,
-            fetch_supported_template_list
+            fetch_supported_template_list,
+            fetch_report_list
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

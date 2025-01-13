@@ -25,7 +25,7 @@
   required: true
 - name: "Days of Missing Pages"
   alias: "days_of_missing_pages"
-  data_type: "string"
+  data_type: "integer"
   required: true
   custom_validation:
     - title: "大于7天"

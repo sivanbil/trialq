@@ -44,7 +44,7 @@
             <div class="flex space-x-2">
               <button
                   class="px-3 py-1 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  @click="viewRelatedReportList(index)"
+                  @click="viewRelatedReportList(project.project_name)"
               >
                 查看相关数据报告
               </button>
@@ -89,8 +89,8 @@
     />
   </div>
 
-  <SlotDialog :showConfirm="false" :isOpen="isDialogOpen" title="演示" @close="closeDialog">
-    <ReportList project-number="222222"/>
+  <SlotDialog :showConfirm="false" :isOpen="isDialogOpen" title="报告归档" @close="closeDialog">
+    <ReportList :projectNumber="projectNumber" v-if="projectNumber"/>
   </SlotDialog>
 </template>
 
@@ -117,6 +117,7 @@ export default {
       totalProjects: 0,
       // 搜索关键字
       searchKeyword: '',
+      projectNumber: "",
       // 抽屉相关状态
       isDrawerOpen: false,
       // 编辑项目相关数据
@@ -152,8 +153,8 @@ export default {
       };
     },
 
-    viewRelatedReportList(index) {
-      console.log(index);
+    viewRelatedReportList(projectNumber) {
+      this.projectNumber = projectNumber;
       this.openDialog()
     },
     // 处理保存
@@ -167,7 +168,7 @@ export default {
 
         if (response.valid) {
           // 保存成功，刷新项目列表
-          this.fetchProjects();
+          await this.fetchProjects();
           this.closeDrawer();
         } else {
           console.error('保存项目失败:', response.message);

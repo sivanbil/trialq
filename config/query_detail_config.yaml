@@ -29,7 +29,7 @@
   data_type: "string"
   required: true
 
-- name: "LOG#"
+- name: "Log#"
   alias: "log_id"
   data_type: "string"
   required: true
@@ -42,10 +42,10 @@
 - name: "QryOpenDateLocalized"
   alias: "qry_open_date_localized"
   data_type: "string"
-  required: true
+  required: false
 
 - name: "QryOpenBy"
-  alias: "qyr_open_by"
+  alias: "qry_open_by"
   data_type: "string"
   required: true
 
@@ -81,10 +81,5 @@
 
 - name: "Name"
   alias: "qry_status"
-  data_type: "string"
-  required: true
-
-- name: "QryOpenDateLocalized"
-  alias: "log_id"
   data_type: "string"
   required: true

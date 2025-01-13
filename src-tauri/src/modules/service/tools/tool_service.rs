@@ -1,10 +1,8 @@
 use crate::models::tools::tools_model::{NewTool, Tool};
 use crate::models::tools::tools_repository::{Pagination, ToolsRepository};
-use crate::AppState;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::SqliteConnection;
-use serde::{Deserialize, Serialize};
-use tauri::State;
+use serde::{Serialize};
 
 pub struct ToolsService {
     repository: ToolsRepository,

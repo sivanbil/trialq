@@ -6,11 +6,11 @@
   alias: 'site'
   data_type: "string"
   required: true
-- name: "subject"
-  alias: 'study'
+- name: "Subject"
+  alias: 'subject'
   data_type: "string"
   required: true
-- name: "Folder name"
+- name: "Folder Name"
   alias: 'folder_name'
   data_type: "string"
   required: true

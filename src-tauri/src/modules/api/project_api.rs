@@ -13,13 +13,14 @@ use crate::modules::{
             },
             report_service::{
                 Response,
-                ResponseData
+
             }
         }
 
     }
 };
 use crate::modules::service::enums::SupportedTemplate;
+use crate::modules::service::projects::report_service::ReportListResponse;
 
 #[tauri::command]
 pub async fn fetch_project_list(
@@ -78,14 +79,13 @@ pub async fn get_project_by_id(
 #[tauri::command]
 pub async fn handle_template_and_files(
     state: State<'_, AppState>, // 从状态中获取 AppState
-    files: Vec<String>, template_name: String) -> Result<Response, String> {
+    files: Vec<String>, template_name: String, project_number:String) -> Result<Response, String> {
     let report_service = &state.report_service;
     println!("Received template name: {}", template_name);
-    println!("Received files:");
+    println!("Received project_number: {}", project_number);
+    println!("Received files:{:?}",{files.clone()});
 
-
-
-    report_service.async_process_excel_files(files)
+    report_service.async_process_excel_files(files, project_number)
 }
 
 
@@ -101,3 +101,13 @@ pub async fn fetch_supported_template_list(
     Ok(SupportedTemplateResponse { valid, templates })
 }
 
+#[tauri::command]
+pub async fn fetch_report_list(
+    state: State<'_, AppState>,
+    current_page: i64,
+    page_size: i64, keyword: Option<String>) -> Result<ReportListResponse, String> {
+
+    let report_service = &state.report_service;
+    let result = report_service.find_reports_paginated(current_page, page_size, keyword);
+    result
+}

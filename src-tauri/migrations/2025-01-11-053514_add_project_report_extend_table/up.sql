@@ -30,8 +30,8 @@ create table projects (
 );
 create table project_report (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project_number TEXT NOT NULL UNIQUE,
-    report_number TEXT NOT NULL,
+    project_number TEXT NOT NULL,
+    report_number TEXT NOT NULL UNIQUE,
     state INTEGER NOT NULL,
     create_time TEXT NOT NULL,
     update_time TEXT NOT NULL
@@ -50,7 +50,7 @@ create table user_task (
 -- 源文件映射
 create table project_report_source (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project_number TEXT NOT NULL UNIQUE,
+    project_number TEXT NOT NULL,
     report_number TEXT NOT NULL,
     source_file_name TEXT NOT NULL,
     source_file_type TEXT NOT NULL,
@@ -124,6 +124,8 @@ CREATE TABLE project_query_detail (
     qry_response_user TEXT NOT NULL,
     qry_answer TEXT NOT NULL,
     qry_status TEXT NOT NULL,
+    create_time TEXT NOT NULL,
+    update_time TEXT,
     report_number TEXT NOT NULL
 );
 

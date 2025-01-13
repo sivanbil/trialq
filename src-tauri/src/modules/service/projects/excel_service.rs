@@ -1,6 +1,5 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
 
 // 递归扫描目录
 fn scan_dir_recursive(path: &Path, files: &mut Vec<PathBuf>) -> Result<(), String> {
