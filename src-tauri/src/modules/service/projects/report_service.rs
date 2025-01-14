@@ -58,6 +58,12 @@ pub struct Response {
     valid: bool,
     data: ResponseData,
 }
+
+#[derive(Serialize)]
+pub struct SummaryResponse {
+    valid: bool,
+    sate: i32,
+}
 use crate::core::excel_process_engine::{FileProcessor, ValidationResult};
 use crate::models::projects::project_report::project_report_source_model::NewProjectReportSource;
 
@@ -272,8 +278,10 @@ impl ProjectReportService {
             .map(|report| {
                 // 查询 source_files
                 let source_files_list = self.source_repository
-                    .find_by_project_number(&report.report_number)
+                    .find_by_report_number(&report.report_number)
                     .unwrap_or_default(); // 如果查询失败，返回空列表
+
+                println!("{:?}", source_files_list);
                 let source_files = source_files_list.into_iter()
                     .map(|source_file| source_file.source_file_name.to_string())
                     .collect::<Vec<String>>();
@@ -283,7 +291,7 @@ impl ProjectReportService {
                     source_files, // 使用查询结果
                     create_time: report.create_time.clone(),
                     state_name: match report.state {
-                        0 | 1 => "导入基础数据".to_string(),
+                        0 | 1 => "已导入数据".to_string(),
                         2 => "数据分析完成".to_string(),
                         _ => "未知状态".to_string(),
                     },
@@ -301,5 +309,31 @@ impl ProjectReportService {
             page_size,
         };
         Ok(reports)
+    }
+
+    // 汇总数据
+    pub fn summary_report_data(&self, report_number: &str, project_no: &str) -> Result<SummaryResponse, String> {
+        // 单个项目以中心为维度，
+        // missing_page -> site_number
+        // query_detail -> study_environment_site
+        // clean_data_progress -> site (切割)
+
+        // 汇总所有的中心-- 可能存在不全？
+        // 汇总所有的数据
+
+        Ok(SummaryResponse {
+            valid: false,
+            sate: 2,
+        })
+    }
+
+    pub fn summary_report_detail(&self, report_number: &str) {
+        // 获取报告的详细的excel数据
+
+    }
+
+    // 获取每一个详细的数据样子
+    pub fn origin_excel_data(&self, report_number: &str, source_file_type: &str) {
+
     }
 }

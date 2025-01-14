@@ -29,6 +29,8 @@
     <SlotDialog :isOpen="isDialogOpen" :showConfirm="false" title="测试" @close="closeDialog">
       <SummaryView :reportNumber="reportNumber" />
     </SlotDialog>
+
+
   </div>
 </template>
 
@@ -36,7 +38,7 @@
 import DrawerForm from './ImportExcelDrawerForm.vue';
 import SlotDialog from '@/components/SlotDialog.vue';
 import SummaryView from '@/views/project/show/dashboard/SummaryView.vue';
-import ReportList from '@/views/project/show/project/ReportList.vue'; // 引入 ReportList 组件
+import ReportList from '@/views/project/show/project/ReportList.vue';
 
 export default {
   name: 'DashBoard',
@@ -89,6 +91,7 @@ export default {
         // 处理删除逻辑
       }
     },
+
   },
 };
 </script>

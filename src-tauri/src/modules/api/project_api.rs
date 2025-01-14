@@ -1,5 +1,6 @@
 use crate::AppState;
 use tauri::State;
+use crate::models::projects::project_base::project_site_model::NewProjectSite;
 use crate::modules::{
     service::{
         projects::{
@@ -21,6 +22,7 @@ use crate::modules::{
 };
 use crate::modules::service::enums::SupportedTemplate;
 use crate::modules::service::projects::report_service::ReportListResponse;
+use crate::modules::service::projects::site_service::{DeleteSiteResponse, SaveSiteResponse, SiteListResponse};
 
 #[tauri::command]
 pub async fn fetch_project_list(
@@ -111,3 +113,56 @@ pub async fn fetch_report_list(
     let result = report_service.find_reports_paginated(current_page, page_size, keyword);
     result
 }
+
+// 获取分页的项目列表
+#[tauri::command]
+pub async fn fetch_site_list(
+    state: State<'_, AppState>,
+    current_page: i64,
+    page_size: i64,
+    project_no: String,
+    keyword: Option<String>) -> Result<SiteListResponse, String> {
+
+    let service = &state.site_service;
+    let result = service.fetch_site_list(current_page, page_size, project_no, keyword);
+    result
+}
+
+// 存储项目中心
+#[tauri::command]
+pub async fn save_project_site(
+    state: State<'_, AppState>, project_name: String, site_number: String,
+    site_name: Option<String>, site_cra: Option<String>) -> Result<SaveSiteResponse, String> {
+    let service = &state.site_service;
+    let result = service.save_site(project_name, site_number, site_name, site_cra);
+    result
+}
+
+#[tauri::command]
+pub async fn delete_project_site(
+    state: State<'_, AppState>,
+    site_id: i32) -> Result<DeleteSiteResponse, String> {
+    let service = &state.site_service;
+    let result = service.delete_site(site_id);
+    result
+}
+#[tauri::command]
+pub async fn update_site_by_id(
+    state: State<'_, AppState>,
+    site_id: i32,
+    project_name: String,
+    site_number: String,
+    site_name: Option<String>,
+    site_cra: Option<String>) -> Result<SaveSiteResponse, String> {
+    let service = &state.site_service;
+
+    let result = service.update_site_by_id(site_id, NewProjectSite {
+        project_name,
+        site_number,
+        site_name: site_name.unwrap_or(String::from("")),
+        site_cra: site_cra.unwrap_or(String::from("")),
+    });
+    result
+}
+
+

@@ -27,13 +27,18 @@ use modules::{
                       save_project,
                       handle_template_and_files,
                       fetch_supported_template_list,
-                      fetch_report_list
+                      fetch_report_list,
+                      fetch_site_list,
+                      save_project_site,
+                      delete_project_site,
+                      update_site_by_id
         }
     },
     service::{
         projects::{
             project_service::{ProjectService},
-            report_service::ProjectReportService
+            report_service::ProjectReportService,
+            site_service::SiteService,
         },
         tools::tool_service::{ToolsService},
         user::user_service::UserService,
@@ -49,6 +54,7 @@ pub struct AppState {
     pub tools_service: ToolsService,
     pub project_service: ProjectService,
     pub report_service: ProjectReportService,
+    pub site_service: SiteService,
 }
 
 lazy_static! {
@@ -69,6 +75,7 @@ pub fn run() {
     let tools_service = ToolsService::new(db_pool.clone()); // 初始化 ToolsService
     let project_service = ProjectService::new(db_pool.clone()); // 初始化 ToolsService
     let report_service = ProjectReportService::new(db_pool.clone()); // 初始化 ToolsService
+    let site_service = SiteService::new(db_pool.clone()); // 初始化 ToolsService
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -87,7 +94,8 @@ pub fn run() {
             user_service,
             tools_service,
             project_service,
-            report_service
+            report_service,
+            site_service
         })
         .invoke_handler(tauri::generate_handler![
             send_license,
@@ -101,7 +109,12 @@ pub fn run() {
 
             handle_template_and_files,
             fetch_supported_template_list,
-            fetch_report_list
+            fetch_report_list,
+
+            fetch_site_list,
+            save_project_site,
+            delete_project_site,
+            update_site_by_id
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

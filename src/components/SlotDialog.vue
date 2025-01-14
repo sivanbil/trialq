@@ -6,7 +6,7 @@
       @click.self="closeDialog"
   >
     <!-- 对话框内容 -->
-    <div class="bg-white rounded-lg shadow-lg w-11/12 p-6">
+    <div class="bg-white rounded-lg shadow-lg p-6">
       <!-- 标题 -->
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-xl font-semibold">{{ title }}</h3>

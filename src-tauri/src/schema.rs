@@ -115,6 +115,16 @@ diesel::table! {
 }
 
 diesel::table! {
+    project_site (id) {
+        id -> Nullable<Integer>,
+        project_name -> Text,
+        site_number -> Text,
+        site_name -> Text,
+        site_cra -> Text,
+    }
+}
+
+diesel::table! {
     projects (id) {
         id -> Nullable<Integer>,
         project_name -> Text,
@@ -166,6 +176,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     project_report_data,
     project_report_extend_data,
     project_report_source,
+    project_site,
     projects,
     tools,
     user_task,

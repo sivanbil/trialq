@@ -4,26 +4,47 @@
 
     <!-- 数据列表 -->
     <div v-if="filteredDataList.length > 0">
-      <table class="min-w-full divide-y divide-gray-200">
+      <table class="min-w-full divide-y divide-gray-200 w-full">
         <thead class="bg-gray-50">
         <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">项目名称</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">项目</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">报告编号</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">生成日期</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">源文件</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
         </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
         <tr v-for="(item, index) in filteredDataList" :key="index">
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.projectName }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.reportNumber }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.createTime }}</td>
+          <td class="px-6 py-4  text-sm whitespace-nowrap text-gray-500">{{ item.projectName }}</td>
+          <td class="px-6 py-4  text-sm text-gray-500">{{ item.reportNumber }}</td>
+          <td class="px-6 py-4  text-sm whitespace-nowrap text-gray-500">
+            <!-- 遍历 sourceFiles 数组 -->
+            <div v-for="(file, fileIndex) in item.sourceFiles" :key="fileIndex" class="block mb-1">
+    <span
+        @click="viewData(file)"
+        class="cursor-pointer px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full hover:bg-blue-200"
+    >
+      {{ file }}
+    </span>
+            </div>
+          </td>
+          <td class="py-4 whitespace-nowrap text-sm text-gray-500">{{ item.stateName }}</td>
+          <td class=" py-4 whitespace-nowrap text-sm text-gray-500">{{ item.createTime }}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            <button
+            <button v-if="item.state === 2"
                 @click="viewItem(item)"
                 class="px-3 py-1 text-sm font-medium text-white bg-orange-500 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               查看
+            </button>
+
+            <button v-if="item.state !== 2"
+                    @click="summaryData(item)"
+                    class="px-3 py-1 text-sm font-medium text-white bg-orange-500 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              汇总数据
             </button>
             <button
                 @click="deleteItem(index)"
@@ -88,14 +109,7 @@ export default {
   computed: {
     // 根据项目号过滤数据
     filteredDataList() {
-      let filteredList = this.dataList;
-      if (this.projectNumber) {
-        filteredList = this.dataList.filter(item => item.projectName === this.projectNumber);
-      }
-      // 分页逻辑
-      const startIndex = (this.currentPage - 1) * this.pageSize;
-      const endIndex = startIndex + this.pageSize;
-      return filteredList.slice(startIndex, endIndex);
+      return this.dataList;
     },
   },
   watch: {
@@ -104,6 +118,9 @@ export default {
       this.currentPage = 1;
       this.fetchData();
     },
+    currentPage() {
+      this.fetchData()
+    }
   },
   mounted() {
     // 组件挂载时获取数据
@@ -119,7 +136,7 @@ export default {
           pageSize: this.pageSize,
         });
         this.dataList = response.data || [];
-        this.totalPages = Math.ceil(this.dataList.length / this.pageSize);
+        this.totalPages = Math.ceil(response.total/this.pageSize);
       } catch (error) {
         console.error('获取报告列表失败:', error);
         this.dataList = [];
@@ -144,6 +161,21 @@ export default {
     nextPage() {
       if (this.currentPage < this.totalPages) {
         this.currentPage += 1;
+      }
+    },
+    // 汇总数据
+    async summaryData(item) {
+      try {
+        const response = await this.$rustInvoke('summary_report_data', {
+          projectNumber: item.projectNumber, // 项目编号
+          reportNumber: item.reportNumber,   // 报告编号
+        });
+        console.log('汇总数据成功:', response.data);
+        // 这里可以根据返回的数据更新 UI 或显示提示信息
+        this.$message.success('汇总数据成功！');
+      } catch (error) {
+        console.error('汇总数据失败:', error);
+        this.$message.error('汇总数据失败，请重试！');
       }
     },
   },

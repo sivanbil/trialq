@@ -50,7 +50,14 @@
               </button>
 
               <button
-                  @click="deleteProject(index)"
+                  class="px-3 py-1 text-sm font-medium text-white bg-green-500 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  @click="openSiteMaintenance(project.project_name)"
+              >
+                维护中心数据
+              </button>
+
+              <button
+                  @click="openDeleteConfirmation(index)"
                   class="px-3 py-1 text-sm font-medium text-white bg-red-500 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 删除
@@ -87,6 +94,15 @@
         @close="closeDrawer"
         @save="handleSave"
     />
+
+    <!-- 自定义确认弹窗 -->
+    <ConfirmationDialog
+        :isOpen="isDeleteConfirmationOpen"
+        @close="closeDeleteConfirmation"
+        @confirm="confirmDelete"
+    />
+
+    <SiteManagement :projectNumber="projectNumber" @close="closeSiteDialog" v-if="isSiteDialogOpen"/>
   </div>
 
   <SlotDialog :showConfirm="false" :isOpen="isDialogOpen" title="报告归档" @close="closeDialog">
@@ -97,53 +113,90 @@
 <script>
 import ProjectFormDrawer from './ProjectDrawerForm.vue';
 import SlotDialog from "@/components/SlotDialog.vue";
-import ReportList from "@/views/project/show/project/ReportList.vue"; // 引入抽屉表单组件
+import ReportList from "@/views/project/show/project/ReportList.vue";
+import SiteManagement from "@/views/project/show/import/SiteManage.vue";
+import ConfirmationDialog from "@/components/ConfirmationDialog.vue"; // 引入确认弹窗组件
 
 export default {
   name: 'ProjectList',
   components: {
+    SiteManagement,
     ReportList,
     SlotDialog,
     ProjectFormDrawer,
+    ConfirmationDialog,
   },
   data() {
     return {
       isDialogOpen: false,
-      // 项目列表
       projects: [],
-      // 分页相关
       currentPage: 1,
       pageSize: 10,
       totalProjects: 0,
-      // 搜索关键字
       searchKeyword: '',
       projectNumber: "",
-      // 抽屉相关状态
       isDrawerOpen: false,
-      // 编辑项目相关数据
       editedProject: {
         index: null,
         name: '',
         description: '',
       },
+      isSiteDialogOpen: false,
+      isDeleteConfirmationOpen: false, // 控制确认弹窗的显示
+      deleteIndex: null, // 当前要删除的项目索引
     };
   },
   computed: {
-    // 计算总页数
     totalPages() {
       return Math.ceil(this.totalProjects / this.pageSize);
     },
   },
   mounted() {
-    // 初始化时获取项目列表
     this.fetchProjects();
   },
   methods: {
-    // 打开抽屉
+    // 打开删除确认弹窗
+    openDeleteConfirmation(index) {
+      this.deleteIndex = index;
+      this.isDeleteConfirmationOpen = true;
+    },
+    // 关闭删除确认弹窗
+    closeDeleteConfirmation() {
+      this.isDeleteConfirmationOpen = false;
+      this.deleteIndex = null;
+    },
+    // 确认删除
+    async confirmDelete() {
+      if (this.deleteIndex !== null) {
+        await this.deleteProject(this.deleteIndex);
+        this.closeDeleteConfirmation();
+      }
+    },
+    // 删除项目
+    async deleteProject(index) {
+      try {
+        const projectId = this.projects[index].id;
+        const response = await this.$rustInvoke('delete_project', {
+          projectId: projectId,
+        });
+        console.log(response);
+
+        if (response.valid) {
+          await this.fetchProjects();
+          this.$message.success('删除成功！');
+        } else {
+          console.error('删除项目失败:', response.message);
+          this.$message.error('删除失败：' + response.message);
+        }
+      } catch (error) {
+        console.error('调用删除项目接口失败:', error);
+        this.$message.error('删除失败，请重试！');
+      }
+    },
+    // 其他方法保持不变
     openDrawer() {
       this.isDrawerOpen = true;
     },
-    // 关闭抽屉
     closeDrawer() {
       this.isDrawerOpen = false;
       this.editedProject = {
@@ -152,12 +205,10 @@ export default {
         description: '',
       };
     },
-
     viewRelatedReportList(projectNumber) {
       this.projectNumber = projectNumber;
-      this.openDialog()
+      this.openDialog();
     },
-    // 处理保存
     async handleSave(project) {
       try {
         const response = await this.$rustInvoke('save_project', {
@@ -167,7 +218,6 @@ export default {
         console.log(response);
 
         if (response.valid) {
-          // 保存成功，刷新项目列表
           await this.fetchProjects();
           this.closeDrawer();
         } else {
@@ -177,28 +227,6 @@ export default {
         console.error('调用保存项目接口失败:', error);
       }
     },
-    // 删除项目
-    async deleteProject(index) {
-      if (confirm('确定删除该项目吗？')) {
-        try {
-          const projectId = this.projects[index].id; // 假设项目对象中有 id 字段
-          const response = await this.$rustInvoke('delete_project', {
-            projectId: projectId,
-          });
-          console.log(response);
-
-          if (response.valid) {
-            // 删除成功，刷新项目列表
-            await this.fetchProjects();
-          } else {
-            console.error('删除项目失败:', response.message);
-          }
-        } catch (error) {
-          console.error('调用删除项目接口失败:', error);
-        }
-      }
-    },
-    // 获取项目列表
     async fetchProjects() {
       try {
         const response = await this.$rustInvoke('fetch_project_list', {
@@ -218,14 +246,12 @@ export default {
         console.error('调用获取项目列表接口失败:', error);
       }
     },
-    // 上一页
     prevPage() {
       if (this.currentPage > 1) {
         this.currentPage--;
         this.fetchProjects();
       }
     },
-    // 下一页
     nextPage() {
       if (this.currentPage < this.totalPages) {
         this.currentPage++;
@@ -235,9 +261,16 @@ export default {
     openDialog() {
       this.isDialogOpen = true;
     },
-    // 关闭对话框
     closeDialog() {
       this.isDialogOpen = false;
+    },
+    openSiteMaintenance(projectNumber) {
+      this.projectNumber = projectNumber;
+      this.isSiteDialogOpen = true;
+    },
+    closeSiteDialog() {
+      this.isSiteDialogOpen = false;
+      this.projectNumber = '';
     },
   },
 };

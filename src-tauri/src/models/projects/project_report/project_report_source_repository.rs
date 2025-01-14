@@ -29,9 +29,9 @@ impl ProjectReportSourceRepository {
     }
 
     // 根据项目编号查找 ProjectReportSource
-    pub fn find_by_project_number(&self, project_num: &str) -> Result<Vec<ProjectReportSource>, diesel::result::Error> {
+    pub fn find_by_report_number(&self, report_no: &str) -> Result<Vec<ProjectReportSource>, diesel::result::Error> {
         let mut conn = self.pool.get().unwrap();
-        project_report_source.filter(project_number.eq(project_num)).load(&mut conn)
+        project_report_source.filter(report_number.eq(report_no)).load(&mut conn)
     }
 
     // 更新 ProjectReportSource

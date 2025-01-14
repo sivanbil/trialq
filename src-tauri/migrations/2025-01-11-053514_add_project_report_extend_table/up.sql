@@ -28,6 +28,13 @@ create table projects (
     update_time TEXT ,
     UNIQUE (project_name)
 );
+create table project_site (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_name TEXT NOT NULL,
+    site_number TEXT NOT NULL,
+    site_name TEXT NOT NULL,
+    site_cra TEXT NOT NULL
+);
 create table project_report (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_number TEXT NOT NULL,

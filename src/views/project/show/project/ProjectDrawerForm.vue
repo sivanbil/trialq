@@ -11,7 +11,10 @@
       <form @submit.prevent="save" class="space-y-4">
         <!-- 项目名称 -->
         <div>
-          <label for="projectName" class="block text-sm font-medium text-gray-700">项目名称</label>
+          <label for="projectName" class="block text-sm font-medium text-gray-700">
+            项目名称
+            <span class="text-red-500">*</span> <!-- 必填红星 -->
+          </label>
           <input
               v-model="form.name"
               type="text"
@@ -24,7 +27,9 @@
 
         <!-- 项目描述 -->
         <div>
-          <label for="projectDescription" class="block text-sm font-medium text-gray-700">项目描述</label>
+          <label for="projectDescription" class="block text-sm font-medium text-gray-700">
+            项目描述
+          </label>
           <textarea
               v-model="form.description"
               id="projectDescription"
@@ -103,12 +108,9 @@ export default {
       if (!this.form.name) {
         this.errors.name = '项目名称不能为空';
       }
-      if (!this.form.description) {
-        this.errors.description = '项目描述不能为空';
-      }
 
       // 如果没有任何错误，返回 true
-      return !this.errors.name && !this.errors.description;
+      return !this.errors.name;
     },
     // 关闭抽屉
     close() {

@@ -1,0 +1,13 @@
+- name: "SiteNumber"
+  alias: 'site_number'
+  data_type: "string"
+  required: true
+- name: "SiteName"
+  alias: 'site_name'
+  data_type: "string"
+  required: false
+- name: "CRA"
+  alias: 'cra'
+  data_type: "string"
+  required: false
+
