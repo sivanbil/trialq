@@ -31,7 +31,8 @@ use modules::{
                       fetch_site_list,
                       save_project_site,
                       delete_project_site,
-                      update_site_by_id
+                      update_site_by_id,
+                      handle_site_file
         }
     },
     service::{
@@ -114,7 +115,8 @@ pub fn run() {
             fetch_site_list,
             save_project_site,
             delete_project_site,
-            update_site_by_id
+            update_site_by_id,
+            handle_site_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

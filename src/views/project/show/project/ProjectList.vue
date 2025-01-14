@@ -68,23 +68,15 @@
       </ul>
     </div>
 
-    <!-- 分页控件 -->
-    <div v-if="projects.length > 0" class="mt-6 flex justify-center space-x-4">
-      <button
-          @click="prevPage"
-          :disabled="currentPage === 1"
-          class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        上一页
-      </button>
-      <span class="text-sm text-gray-600">第 {{ currentPage }} 页 / 共 {{ totalPages }} 页</span>
-      <button
-          @click="nextPage"
-          :disabled="currentPage === totalPages"
-          class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        下一页
-      </button>
+    <div class="mt-1">
+      <!-- 分页控件 -->
+      <Pagination
+          v-if="projects.length > 0"
+          :currentPage="currentPage"
+          :totalPages="totalPages"
+          @update:currentPage="handlePageChange"
+      />
+
     </div>
 
     <!-- 抽屉表单 -->
@@ -115,7 +107,8 @@ import ProjectFormDrawer from './ProjectDrawerForm.vue';
 import SlotDialog from "@/components/SlotDialog.vue";
 import ReportList from "@/views/project/show/project/ReportList.vue";
 import SiteManagement from "@/views/project/show/import/SiteManage.vue";
-import ConfirmationDialog from "@/components/ConfirmationDialog.vue"; // 引入确认弹窗组件
+import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
+import Pagination from "@/components/PaginationView.vue"; // 引入分页组件
 
 export default {
   name: 'ProjectList',
@@ -125,6 +118,7 @@ export default {
     SlotDialog,
     ProjectFormDrawer,
     ConfirmationDialog,
+    Pagination, // 注册分页组件
   },
   data() {
     return {
@@ -155,24 +149,26 @@ export default {
     this.fetchProjects();
   },
   methods: {
-    // 打开删除确认弹窗
+    // 处理页码变化
+    handlePageChange(newPage) {
+      this.currentPage = newPage;
+      this.fetchProjects();
+    },
+    // 其他方法保持不变
     openDeleteConfirmation(index) {
       this.deleteIndex = index;
       this.isDeleteConfirmationOpen = true;
     },
-    // 关闭删除确认弹窗
     closeDeleteConfirmation() {
       this.isDeleteConfirmationOpen = false;
       this.deleteIndex = null;
     },
-    // 确认删除
     async confirmDelete() {
       if (this.deleteIndex !== null) {
         await this.deleteProject(this.deleteIndex);
         this.closeDeleteConfirmation();
       }
     },
-    // 删除项目
     async deleteProject(index) {
       try {
         const projectId = this.projects[index].id;
@@ -193,7 +189,6 @@ export default {
         this.$message.error('删除失败，请重试！');
       }
     },
-    // 其他方法保持不变
     openDrawer() {
       this.isDrawerOpen = true;
     },
@@ -244,18 +239,6 @@ export default {
         }
       } catch (error) {
         console.error('调用获取项目列表接口失败:', error);
-      }
-    },
-    prevPage() {
-      if (this.currentPage > 1) {
-        this.currentPage--;
-        this.fetchProjects();
-      }
-    },
-    nextPage() {
-      if (this.currentPage < this.totalPages) {
-        this.currentPage++;
-        this.fetchProjects();
       }
     },
     openDialog() {

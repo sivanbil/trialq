@@ -3,6 +3,7 @@ use crate::models::projects::project_base::project_site_repository::ProjectSiteR
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::SqliteConnection;
 use serde::Serialize;
+use crate::core::excel_process_engine::{FileProcessor, ValidationResult};
 use crate::models::projects::Pagination;
 
 #[derive(Serialize)]
@@ -10,6 +11,13 @@ pub struct DeleteSiteResponse {
     valid: bool,
     message: String, // 返回的消息
 }
+
+#[derive(Serialize)]
+pub struct ImportSiteResponse {
+    valid: bool,
+    message: String, // 返回的消息
+}
+
 
 #[derive(Serialize)]
 pub struct SiteListResponse {
@@ -216,5 +224,38 @@ impl SiteService {
                 })
             }
         }
+    }
+
+    pub fn async_process_excel_files(&self, file_path: String, project_name: String) -> Result<ImportSiteResponse, String> {
+        // 处理文件内容
+        let callback = |results: Vec<ValidationResult>, file_name: &str| {
+            for result in results {
+                println!("{:?}", result.data);
+                let json_value = serde_json::to_value(&result.data).unwrap();
+
+                if let Ok(mut data) = serde_json::from_value::<NewProjectSite>(json_value) {
+                    let site = NewProjectSite {
+                        project_name: project_name.clone(),
+                        site_number: data.site_number,
+                        site_name: data.site_name,
+                        site_cra: data.site_cra,
+                    };
+                    match self.repository.create_site(site) {
+                        Ok(site) => {
+                            println!("site:{:?}", site);
+                        }
+                        _ => {
+
+                        }
+                    }
+                }
+            }
+        };
+        FileProcessor::process_file(file_path, callback).map_err(|e| e.to_string()).expect("TODO: panic message");
+
+        Ok(ImportSiteResponse {
+            valid: true,
+            message: "导入成功".to_string(),
+        })
     }
 }

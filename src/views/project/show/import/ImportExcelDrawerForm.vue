@@ -181,7 +181,7 @@
             <p v-if="analysisResult" class="text-sm text-gray-500">
               {{ analysisResult }}
             </p>
-            <p v-else class="text-sm text-gray-500">正在分析数据，请稍候...</p>
+            <p v-else class="text-sm text-gray-500">请点击“开始分析”按钮</p>
           </div>
         </div>
       </div>
@@ -212,14 +212,14 @@
           "
             class="px-4 py-2 bg-purple-800 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
-          下一步
+          导入
         </button>
         <button
             v-if="currentStep === 4"
-            @click="confirmImport"
+            @click="analyzeData"
             class="px-4 py-2 bg-purple-800 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
-          完成
+          开始分析
         </button>
       </div>
     </div>
@@ -250,6 +250,7 @@ export default {
         missingPage: null, // Missing Page 文件路径
       },
       analysisResult: "", // 数据分析结果
+      reportNo: "",
       error: "",
     };
   },
@@ -286,9 +287,7 @@ export default {
     // 获取支持的模板列表
     async fetchSupportedTemplates() {
       try {
-        const response = await this.$rustInvoke("fetch_supported_template_list", {
-          project: this.project, // 传递当前选择的项目
-        });
+        const response = await this.$rustInvoke("fetch_supported_template_list");
         this.templateOptions = response.templates; // 更新模板选项
       } catch (error) {
         console.error("获取支持的模板列表失败:", error);
@@ -337,6 +336,18 @@ export default {
           this.error = "请选择项目";
           return;
         }
+        try {
+          const response = await this.$rustInvoke('fetch_site_list', {
+            projectNo: this.project,
+            currentPage: 1,
+            pageSize: 10,
+          });
+          if (!response.valid) {
+            return this.$showModal("请去项目列表维护中心数据!");
+          }
+        } catch (error) {
+          return this.$showModal("网络异常");
+        }
         this.currentStep = 2;
       } else if (this.currentStep === 2) {
         if (!this.templateType) {
@@ -349,8 +360,7 @@ export default {
           this.error = "请选择所有文件";
           return;
         }
-        this.currentStep = 4;
-        this.analyzeData(); // 进入数据分析步骤
+        await this.confirmImport(); // 调用确认导入方法
       }
       this.error = ""; // 清空错误信息
     },
@@ -361,37 +371,18 @@ export default {
         this.error = ""; // 清空错误信息
       }
     },
-    // 数据分析
-    async analyzeData() {
-      try {
-        const result = await this.$rustInvoke("analyze_data", {
-          files: [
-            this.selectedFiles.queryDetail,
-            this.selectedFiles.dataCleanProgress,
-            this.selectedFiles.missingPage,
-          ],
-        });
-
-        if (result.valid) {
-          this.analysisResult = result.data; // 更新分析结果
-        } else {
-          this.error = "数据分析失败，请重试";
-        }
-      } catch (error) {
-        console.error("数据分析失败:", error);
-        this.error = "数据分析失败，请重试";
-      }
-    },
     // 确认导入
     async confirmImport() {
       try {
-        // 显示提醒
-        const closeModal = this.$showModal("正在导入数据，请稍等片刻...", {
+        // 显示不可关闭的提示框
+        const closeModal = this.$showModal("系统正在导入数据，请不要关闭程序...", {
           showCloseButton: false, // 隐藏关闭按钮
+          allowOutsideClick: false, // 禁止点击外部关闭
         });
 
+        // 调用导入接口
         const result = await this.$rustInvoke("handle_template_and_files", {
-          projectNumber: this.project, // 传递当前选择的项目
+          projectNo: this.project, // 传递当前选择的项目
           templateName: this.templateType,
           files: [
             this.selectedFiles.queryDetail,
@@ -401,20 +392,47 @@ export default {
         });
 
         if (result.valid) {
+          this.reportNo = result.data.reportNumber
           console.log("文件导入成功:", result);
-          // 3 秒后自动关闭模态框
-          setTimeout(() => {
-            closeModal(); // 调用返回的 close 函数关闭模态框
-          }, 3000);
-          this.$emit("confirm-import", [result.data]);
-          this.close(); // 关闭抽屉并清空内容
+          closeModal(); // 关闭提示框
+          this.currentStep = 4; // 切换到第四步
         } else {
+          closeModal(); // 关闭提示框
           this.error = "文件导入失败，请重试";
         }
       } catch (error) {
         console.error("文件导入失败:", error);
         this.error = "文件导入失败，请重试";
       }
+    },
+    // 数据分析
+    async analyzeData() {
+      // 显示不可关闭的提示框
+      const closeModal = this.$showModal("系统正在分析数据，请稍候...", {
+        showCloseButton: false, // 隐藏关闭按钮
+        allowOutsideClick: false, // 禁止点击外部关闭
+      });
+
+      try {
+        // 调用数据分析接口
+        const result = await this.$rustInvoke("analyze_report_data", {
+          projectNo: this.project,
+          reportNo: this.reportNo
+        });
+
+        if (result.valid) {
+          console.log("数据分析成功:", result);
+          this.analysisResult = result.data; // 更新分析结果
+        } else {
+          this.error = "数据分析失败，请重试";
+        }
+        this.close(); // 关闭抽屉
+      } catch (error) {
+        console.error("数据分析失败:", error);
+        this.error = "数据分析失败，请重试";
+      }
+      // 关闭提示框和抽屉
+      closeModal();
     },
   },
   // 在组件挂载时获取项目列表

@@ -204,6 +204,8 @@ impl FileProcessor {
             "cleaning_data_config.yaml"
         } else if file_name_lower.contains("missing") && file_name_lower.contains("page") {
             "missing_page_config.yaml"
+        } else if file_name_lower.contains("import_site") {
+            "import_site_config.yaml"
         } else {
             return Err(format!("未找到匹配的配置文件: {}", file_name).into());
         };

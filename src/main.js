@@ -23,7 +23,7 @@ app.component('HeaderView', HeaderView);
 app.component('GlobalModal', ModalContainer);
 
 // 定义全局函数
-app.config.globalProperties.$showModal = function (message,title = '提示',  options = {}) {
+app.config.globalProperties.$showModal = function (message, options = {},title = '提示') {
     // 默认选项
     const { showCloseButton = true } = options;
 

@@ -13,6 +13,7 @@ pub struct ProjectSite {
 #[derive(Insertable,AsChangeset, Serialize, Deserialize, Debug)]
 #[diesel(table_name = crate::models::projects::project_base::schema::project_site)]
 pub struct NewProjectSite {
+    #[serde(default)]
     pub project_name: String,
     pub site_number: String,
     #[serde(default)]

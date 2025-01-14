@@ -72,28 +72,17 @@
         </table>
 
         <!-- 分页控件 -->
-        <div class="mt-4 flex justify-between items-center">
-          <div class="text-sm text-gray-700">
-            当前第 {{ currentPage }} 页，共 {{ totalPages }} 页
-          </div>
-          <div class="flex space-x-2">
-            <button
-                @click="prevPage"
-                :disabled="currentPage === 1"
-                class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50"
-            >
-              上一页
-            </button>
-            <button
-                @click="nextPage"
-                :disabled="currentPage === totalPages"
-                class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50"
-            >
-              下一页
-            </button>
-          </div>
+        <div class="mt-1">
+          <!-- 分页控件 -->
+          <Pagination
+              v-if="centers.length > 0"
+              :currentPage="currentPage"
+              :totalPages="totalPages"
+              @update:currentPage="handlePageChange"
+          />
         </div>
-      </div>
+
+        </div>
 
       <!-- 添加/编辑中心表单 -->
       <div v-if="isFormOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -208,10 +197,12 @@
 </template>
 
 <script>
-import { open } from "@tauri-apps/plugin-dialog"; // 导入 Tauri 的 dialog API
+import { open } from "@tauri-apps/plugin-dialog";
+import Pagination from "@/components/PaginationView.vue"; // 导入 Tauri 的 dialog API
 
 export default {
   name: 'SiteManage',
+  components: {Pagination},
   props: {
     projectNumber: {
       type: String,
@@ -240,7 +231,11 @@ export default {
     closeDialog() {
       this.$emit('close');
     },
-
+    // 处理页码变化
+    handlePageChange(newPage) {
+      this.currentPage = newPage;
+      this.fetchCenterData();
+    },
     // 获取中心列表数据
     async fetchCenterData() {
       try {
@@ -365,8 +360,9 @@ export default {
       }
 
       try {
-        const response = await this.$rustInvoke('import_site', {
-          file_path: this.filePath,
+        const response = await this.$rustInvoke('handle_site_file', {
+          filePath: this.filePath,
+          projectNumber: this.projectNumber
         });
         if (response.valid) {
           this.$showModal('导入成功！');

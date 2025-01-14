@@ -22,7 +22,7 @@ use crate::modules::{
 };
 use crate::modules::service::enums::SupportedTemplate;
 use crate::modules::service::projects::report_service::ReportListResponse;
-use crate::modules::service::projects::site_service::{DeleteSiteResponse, SaveSiteResponse, SiteListResponse};
+use crate::modules::service::projects::site_service::{DeleteSiteResponse, ImportSiteResponse, SaveSiteResponse, SiteListResponse};
 
 #[tauri::command]
 pub async fn fetch_project_list(
@@ -81,13 +81,13 @@ pub async fn get_project_by_id(
 #[tauri::command]
 pub async fn handle_template_and_files(
     state: State<'_, AppState>, // 从状态中获取 AppState
-    files: Vec<String>, template_name: String, project_number:String) -> Result<Response, String> {
+    files: Vec<String>, template_name: String, project_no:String) -> Result<Response, String> {
     let report_service = &state.report_service;
     println!("Received template name: {}", template_name);
-    println!("Received project_number: {}", project_number);
+    println!("Received project_no: {}", project_no);
     println!("Received files:{:?}",{files.clone()});
 
-    report_service.async_process_excel_files(files, project_number)
+    report_service.async_process_excel_files(files, project_no)
 }
 
 
@@ -164,5 +164,18 @@ pub async fn update_site_by_id(
     });
     result
 }
+
+
+#[tauri::command]
+pub async fn handle_site_file(
+    state: State<'_, AppState>, // 从状态中获取 AppState
+    file_path: String,  project_number:String) -> Result<ImportSiteResponse, String> {
+    println!("{:?}", file_path);
+    println!("{:?}", project_number);
+    let service = &state.site_service;
+
+    service.async_process_excel_files(file_path, project_number)
+}
+
 
 

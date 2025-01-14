@@ -17,32 +17,34 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
         <tr v-for="(item, index) in filteredDataList" :key="index">
-          <td class="px-6 py-4  text-sm whitespace-nowrap text-gray-500">{{ item.projectName }}</td>
-          <td class="px-6 py-4  text-sm text-gray-500">{{ item.reportNumber }}</td>
-          <td class="px-6 py-4  text-sm whitespace-nowrap text-gray-500">
+          <td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500">{{ item.projectName }}</td>
+          <td class="px-6 py-4 text-sm text-gray-500">{{ item.reportNumber }}</td>
+          <td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500 text-left">
             <!-- 遍历 sourceFiles 数组 -->
             <div v-for="(file, fileIndex) in item.sourceFiles" :key="fileIndex" class="block mb-1">
-    <span
-        @click="viewData(file)"
-        class="cursor-pointer px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full hover:bg-blue-200"
-    >
-      {{ file }}
-    </span>
+                <span
+                    @click="viewData(file)"
+                    class="cursor-pointer px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full hover:bg-blue-200"
+                >
+                  {{ file }}
+                </span>
             </div>
           </td>
           <td class="py-4 whitespace-nowrap text-sm text-gray-500">{{ item.stateName }}</td>
-          <td class=" py-4 whitespace-nowrap text-sm text-gray-500">{{ item.createTime }}</td>
+          <td class="py-4 whitespace-nowrap text-sm text-gray-500">{{ item.createTime }}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            <button v-if="item.state === 2"
+            <button
+                v-if="item.state === 2"
                 @click="viewItem(item)"
                 class="px-3 py-1 text-sm font-medium text-white bg-orange-500 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               查看
             </button>
 
-            <button v-if="item.state !== 2"
-                    @click="summaryData(item)"
-                    class="px-3 py-1 text-sm font-medium text-white bg-orange-500 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            <button
+                v-if="item.state !== 2"
+                @click="analyzeData(item)"
+                class="px-3 py-1 text-sm font-medium text-white bg-orange-500 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               汇总数据
             </button>
@@ -58,37 +60,44 @@
       </table>
 
       <!-- 分页控件 -->
-      <div class="mt-4 flex justify-between items-center">
-        <button
-            @click="prevPage"
-            :disabled="currentPage === 1"
-            class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          上一页
-        </button>
-        <span class="text-sm text-gray-700">
-          第 {{ currentPage }} 页 / 共 {{ totalPages }} 页
-        </span>
-        <button
-            @click="nextPage"
-            :disabled="currentPage === totalPages"
-            class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          下一页
-        </button>
+      <div class="mt-1">
+        <!-- 分页控件 -->
+        <Pagination
+            v-if="filteredDataList.length > 0"
+            :currentPage="currentPage"
+            :totalPages="totalPages"
+            @update:currentPage="handlePageChange"
+        />
+
       </div>
+
+
     </div>
 
     <!-- 无数据时的提示 -->
     <div v-else class="text-center py-6 text-gray-500">
       暂无数据，请去导入项目相关的表格进行数据分析。
     </div>
+
+    <!-- 查看数据的 Dialog -->
+    <SlotDialog :isOpen="isDialogOpen" :showConfirm="false" title="测试" @close="closeDialog">
+      <SummaryView :reportNumber="reportNumber" />
+    </SlotDialog>
   </div>
 </template>
 
 <script>
+import SlotDialog from '@/components/SlotDialog.vue';
+import SummaryView from '@/views/project/show/dashboard/SummaryView.vue';
+import Pagination from "@/components/PaginationView.vue";
+
 export default {
   name: 'ReportList',
+  components: {
+    Pagination,
+    SlotDialog,
+    SummaryView,
+  },
   props: {
     projectNumber: {
       type: String,
@@ -104,6 +113,8 @@ export default {
       dataList: [], // 从后端获取的完整数据
       currentPage: 1, // 当前页码
       totalPages: 1, // 总页数
+      isDialogOpen: false, // 控制 Dialog 的显示
+      reportNumber: '', // 当前报告号
     };
   },
   computed: {
@@ -119,14 +130,19 @@ export default {
       this.fetchData();
     },
     currentPage() {
-      this.fetchData()
-    }
+      this.fetchData();
+    },
   },
   mounted() {
     // 组件挂载时获取数据
     this.fetchData();
   },
   methods: {
+    // 处理页码变化
+    handlePageChange(newPage) {
+      this.currentPage = newPage;
+      this.fetchData();
+    },
     // 获取数据
     async fetchData() {
       try {
@@ -136,7 +152,7 @@ export default {
           pageSize: this.pageSize,
         });
         this.dataList = response.data || [];
-        this.totalPages = Math.ceil(response.total/this.pageSize);
+        this.totalPages = Math.ceil(response.total / this.pageSize);
       } catch (error) {
         console.error('获取报告列表失败:', error);
         this.dataList = [];
@@ -145,11 +161,20 @@ export default {
     },
     // 查看项目
     viewItem(item) {
-      this.$emit('view-item', item);
+      this.reportNumber = item.reportNumber;
+      this.isDialogOpen = true; // 打开 Dialog
+    },
+    // 关闭 Dialog
+    closeDialog() {
+      this.isDialogOpen = false;
     },
     // 删除项目
     deleteItem(index) {
-      this.$emit('delete-item', index);
+      if (confirm('确定删除该项目吗？')) {
+        // 处理删除逻辑
+        this.dataList.splice(index, 1); // 从列表中移除
+        this.$emit('delete-item', index); // 触发父组件事件
+      }
     },
     // 上一页
     prevPage() {
@@ -164,19 +189,29 @@ export default {
       }
     },
     // 汇总数据
-    async summaryData(item) {
+    async analyzeData(item) {
+      // 显示不可关闭的提示框
+      const closeModal = this.$showModal('系统正在分析数据，请稍候...', {
+        showCloseButton: false, // 隐藏关闭按钮
+        allowOutsideClick: false, // 禁止点击外部关闭
+      });
       try {
-        const response = await this.$rustInvoke('summary_report_data', {
-          projectNumber: item.projectNumber, // 项目编号
-          reportNumber: item.reportNumber,   // 报告编号
+        // 调用数据分析接口
+        const result = await this.$rustInvoke('analyze_report_data', {
+          projectNo: item.projectName,
+          reportNo: item.reportNumber,
         });
-        console.log('汇总数据成功:', response.data);
-        // 这里可以根据返回的数据更新 UI 或显示提示信息
-        this.$message.success('汇总数据成功！');
+        if (result.valid) {
+          // 这里可以根据返回的数据更新 UI 或显示提示信息
+          this.$showModal('数据分析完成！');
+        } else {
+          this.$showModal('数据分析失败，请重试！');
+        }
       } catch (error) {
-        console.error('汇总数据失败:', error);
-        this.$message.error('汇总数据失败，请重试！');
+        this.$showModal('网络异常，请稍后重试！');
       }
+      // 关闭提示框
+      closeModal();
     },
   },
 };
