@@ -3,10 +3,12 @@ use std::path::PathBuf;
 // 创建项目报告
 // project_report_service.rs
 use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::sqlite::SqliteConnection;
+use diesel::sqlite::{Sqlite, SqliteConnection};
 use std::sync::Arc;
 use std::time::SystemTime;
 use date_formatter::utils::format_date;
+use diesel::serialize::ToSql;
+use diesel::sql_types::Text;
 use regitry_code::generate_task_number;
 use serde::Serialize;
 use crate::models::projects::{project_report::{
@@ -14,7 +16,6 @@ use crate::models::projects::{project_report::{
     project_report_repository::ProjectReportRepository,
     project_report_source_repository::ProjectReportSourceRepository,
     project_report_data_repository::ProjectReportDataRepository,
-    project_report_extend_data_repository::ProjectReportExtendDataRepository,
     origin::{
         project_query_detail_repository::ProjectQueryDetailRepository,
         project_query_detail_model::{
@@ -30,6 +31,16 @@ use crate::models::projects::{project_report::{
         }
     }
 }, Pagination};
+
+use crate::modules::service::projects::site_service::SiteService;
+use crate::models::projects::project_report::project_report_data_model::ProjectReportData;
+
+
+#[derive(Serialize)]
+pub struct OriginExcelDataResponse {
+    valid: bool,
+    data: Vec<serde_json::Value>,
+}
 #[derive(Serialize)]
 pub struct ReportListResponse {
     valid: bool,
@@ -38,6 +49,25 @@ pub struct ReportListResponse {
     current_page: i64,       // 当前页码
     page_size: i64,          // 每页大小
 }
+
+#[derive(Serialize)]
+pub struct ReportDetailResponse {
+    valid: bool,
+    #[serde(rename = "projectName")]
+    project_name: String,
+    #[serde(rename = "reportNumber")]
+    report_number: String,
+    #[serde(rename = "sourceFiles")]
+    source_files: Vec<String>,
+    #[serde(rename = "createTime")]
+    create_time: String,
+    state: i32,
+    #[serde(rename = "stateName")]
+    state_name: String,
+    #[serde(rename = "reportData")]
+    report_data: Vec<ProjectReportData>, // 返回完整的报告数据
+}
+
 #[derive(Serialize)]
 pub struct ResponseData {
     #[serde(rename = "projectName")] // 转换为驼峰命名
@@ -48,6 +78,7 @@ pub struct ResponseData {
     source_files: Vec<String>,
     #[serde(rename = "createTime")] // 转换为驼峰命名
     create_time: String,
+    state: i32,
     #[serde(rename = "stateName")]
     state_name: String,
 }
@@ -65,26 +96,28 @@ pub struct SummaryResponse {
     sate: i32,
 }
 use crate::core::excel_process_engine::{FileProcessor, ValidationResult};
+use crate::models::projects::project_base::project_site_model::ProjectSite;
+use crate::models::projects::project_report::project_report_data_model::NewProjectReportData;
 use crate::models::projects::project_report::project_report_source_model::NewProjectReportSource;
 
 pub struct ProjectReportService {
     repository: Arc<ProjectReportRepository>,
     source_repository: Arc<ProjectReportSourceRepository>,
     data_repository: Arc<ProjectReportDataRepository>,
-    extend_data_repository: Arc<ProjectReportExtendDataRepository>,
     missing_page_repository: Arc<ProjectMissingPageRepository>,
     query_detail_repository: Arc<ProjectQueryDetailRepository>,
     clean_data_repository: Arc<ProjectDataCleanProgressRepository>,
+    site_service: Arc<SiteService>,
 
 }
 
 impl ProjectReportService {
     pub fn new(pool: Pool<ConnectionManager<SqliteConnection>>) -> Self {
         ProjectReportService {
+            site_service: Arc::new(SiteService::new(pool.clone())),
             repository: Arc::new(ProjectReportRepository::new(pool.clone())),
             source_repository: Arc::new(ProjectReportSourceRepository::new(pool.clone())),
             data_repository: Arc::new(ProjectReportDataRepository::new(pool.clone())),
-            extend_data_repository: Arc::new(ProjectReportExtendDataRepository::new(pool.clone())),
             missing_page_repository: Arc::new(ProjectMissingPageRepository::new(pool.clone())),
             clean_data_repository: Arc::new(ProjectDataCleanProgressRepository::new(pool.clone())),
             query_detail_repository: Arc::new(ProjectQueryDetailRepository::new(pool.clone())),
@@ -124,7 +157,7 @@ impl ProjectReportService {
     pub fn async_process_excel_files(&self, files: Vec<String>, project_number: String) -> Result<Response, String> {
         // 1. 生成报告编号和创建时间
         let create_time = format_date(SystemTime::now(), "%Y-%m-%d");
-        let report_number = format!("REPORT_{}", generate_task_number());
+        let report_number = format!("{}", generate_task_number());
 
         // 2. 创建项目报告
         self.create_project_report(&project_number, &report_number, &create_time)?;
@@ -241,6 +274,7 @@ impl ProjectReportService {
                 report_number: report_number.to_string(),
                 source_files,
                 create_time: create_time.to_string(),
+                state: 1,
                 state_name: "".to_string(),
             },
         }
@@ -290,6 +324,7 @@ impl ProjectReportService {
                     report_number: report.report_number.clone(),
                     source_files, // 使用查询结果
                     create_time: report.create_time.clone(),
+                    state: report.state.clone(),
                     state_name: match report.state {
                         0 | 1 => "已导入数据".to_string(),
                         2 => "数据分析完成".to_string(),
@@ -314,26 +349,209 @@ impl ProjectReportService {
     // 汇总数据
     pub fn summary_report_data(&self, report_number: &str, project_no: &str) -> Result<SummaryResponse, String> {
         // 单个项目以中心为维度，
-        // missing_page -> site_number
-        // query_detail -> study_environment_site
-        // clean_data_progress -> site (切割)
+        let result_report = self.repository.find_report_by_report_number(report_number)?;
 
-        // 汇总所有的中心-- 可能存在不全？
-        // 汇总所有的数据
-
+        let report = result_report.unwrap();
+        let report_id = report.id;
+        // 先看看目前维护的中心是否全乎，如果不存在，就维护进去
+        self.process_site_numbers(project_no.to_string().clone()).expect("TODO: panic message");
+        // 获取该项目的所有中心
+        let mut current_page = 1;
+        let page_size = 10;
+        let mut total_pages = 1;
+        while total_pages >= current_page {
+            let result = self.site_service.fetch_site_list(current_page, page_size, project_no.parse().unwrap(), None);
+            if let Ok(site_list_response) = result {
+                // 成功获取 SiteListResponse
+                self.summary_every_site_data(report_number, site_list_response.sites);
+                total_pages = (site_list_response.total as f64 / page_size as f64).ceil() as i64;
+                current_page += 1;
+            } else {
+                // 处理错误情况
+                println!("获取站点列表失败: {:?}", result.err());
+                break;
+            }
+        }
+        self.repository.update_report_state(report_id, 2).expect("TODO: panic message");
         Ok(SummaryResponse {
-            valid: false,
+            valid: true,
             sate: 2,
         })
     }
 
-    pub fn summary_report_detail(&self, report_number: &str) {
-        // 获取报告的详细的excel数据
 
+    pub fn summary_every_site_data(&self, report_number:&str, sites: Vec<ProjectSite>) {
+        sites.iter().for_each(|site| {
+            let site_number = site.site_number.clone();
+            let project_number = site.project_name.clone();
+            let vec_result = self.missing_page_repository.find_missing_page_stats(report_number, &(site_number.clone()));
+
+            let mut missing_pages = 0;
+            let mut md_gt7 = 0;
+            let mut md_gt14 = 0;
+            match vec_result {
+                Ok(result) => {
+                    missing_pages = result.data_page_count;
+                    md_gt7 = result.gt_7;
+                    md_gt14 = result.gt_14;
+                }
+                _ => {
+                }
+            }
+            let pages = 0;
+            let pages_entered = 0;
+            let sdv_backlog = 0;
+            let percent_pages_entered = "0.0".to_string();
+            let percent_pages_sdved = "0.0".to_string();
+
+            let answered_query = 0;
+            let opened_query = 0;
+            let op_gt7 = 0;
+            let op_gt14 = 0;
+            let op_gt21 = 0;
+            let op_gte30 = 0;
+
+            let answered_query = 0;
+            let opened_query = 0;
+            // 看看每个中心总页数
+            // missing-subject_id
+            // data_clean -subject
+            // query_detail - subject_name
+            // 以上数据取唯一，按照每个报告的每个site进行分组
+            let data = NewProjectReportData {
+                site: site.site_number.to_string(),
+                site_name: "".to_string(),
+                cra: "".to_string(),
+                pages,
+                pages_entered,
+                missing_pages,
+                md_gt7,
+                md_gt14,
+                sdv_backlog,
+                edc_status_comment: "".to_string(),
+                percent_pages_entered,
+                percent_pages_sdved,
+                answered_query,
+                opened_query,
+                op_gt7: 0,
+                op_gt14: 0,
+                op_gt21: 0,
+                op_gt30: 0,
+                report_number: format!("{}", report_number),
+            };
+            self.data_repository.create_report_data(data).expect("TODO: panic message");
+        });
     }
 
-    // 获取每一个详细的数据样子
-    pub fn origin_excel_data(&self, report_number: &str, source_file_type: &str) {
+    pub fn summary_report_detail(&self, report_number: &str) -> Result<ReportDetailResponse, String> {
+        // 获取报告基本信息
+        let report = self.repository.find_report_by_report_number(report_number)?;
+        let report = report.ok_or("Report not found")?;
 
+        // 获取报告数据
+        let report_data = self.data_repository.find_report_data_by_no(report_number)?;
+
+        // 获取报告源文件
+        let source_files = self.source_repository
+            .find_by_report_number(report_number).unwrap()
+            .into_iter()
+            .map(|source| source.source_file_name)
+            .collect();
+
+        // 构建返回的 JSON 数据
+        Ok(ReportDetailResponse {
+            valid: true,
+            project_name: report.project_number,
+            report_number: report.report_number,
+            source_files,
+            create_time: report.create_time,
+            state: report.state,
+            state_name: match report.state {
+                0 | 1 => "已导入数据".to_string(),
+                2 => "数据分析完成".to_string(),
+                _ => "未知状态".to_string(),
+            },
+            report_data, // 返回完整的报告数据
+        })
+    }
+
+    // 获取原始 Excel 数据
+    pub fn origin_excel_data(&self, report_number: &str, source_file_name: &str) -> Result<OriginExcelDataResponse, String> {
+        // 根据文件名判断文件类型
+        let source_file_type = match source_file_name.to_lowercase().as_str() {
+            s if s.contains("query") => "query_detail",
+            s if s.contains("clean") => "data_clean_progress",
+            s if s.contains("missing") => "missing_pages",
+            _ => return Err("Unknown file type".to_string()),
+        };
+
+        // 根据文件类型查询相应的数据
+        let data = match source_file_type {
+            "query_detail" => {
+                self.query_detail_repository
+                    .find_query_details_by_report_number(report_number)?
+                    .into_iter()
+                    .map(|d| serde_json::to_value(d).unwrap())
+                    .collect()
+            }
+            "data_clean_progress" => {
+                self.clean_data_repository
+                    .find_data_clean_progress_by_report_number(report_number)?
+                    .into_iter()
+                    .map(|d| serde_json::to_value(d).unwrap())
+                    .collect()
+            }
+            "missing_pages" => {
+                self.missing_page_repository
+                    .find_missing_pages_by_report_number(report_number)?
+                    .into_iter()
+                    .map(|d| serde_json::to_value(d).unwrap())
+                    .collect()
+            }
+            _ => return Err("Unknown file type".to_string()),
+        };
+
+        // 封装结果到结构体
+        Ok(OriginExcelDataResponse {
+            valid: true, // 固定为 true
+            data,
+        })
+    }
+
+    // 在某个服务或逻辑层中调用
+    pub fn process_site_numbers(
+        &self,
+        project_number: String
+    ) -> Result<(), String> {
+        let missing_page_site_numbers = self.missing_page_repository.find_unique_site_numbers()?;
+        let query_detail_site_numbers = self.clean_data_repository.find_site_numbers()?;
+        let clean_data_site_numbers = self.query_detail_repository.find_unique_study_environment_sites()?;
+
+        // 3. 合并两个列表并去重
+        let mut all_site_numbers: Vec<String> = missing_page_site_numbers
+            .into_iter()
+            .chain(query_detail_site_numbers.into_iter())
+            .chain(clean_data_site_numbers.into_iter())
+            .map(|s| s.trim().to_string()) // 去除空格
+            .collect();
+        all_site_numbers.sort();
+        all_site_numbers.dedup(); // 去重
+        // 4. 遍历所有 site_number，调用 SiteService 检查并插入
+        for site_number in all_site_numbers {
+            // 检查站点是否存在
+            if self.site_service.not_exist(site_number.clone())? {
+                // 如果不存在，则插入
+                let _ = self.site_service.save_site(
+                    project_number.clone(),
+                    site_number.clone(),
+                    None, // site_name
+                    None, // site_cra
+                )?;
+            } else {
+                println!("站点已存在: {}", site_number);
+            }
+        }
+
+        Ok(())
     }
 }

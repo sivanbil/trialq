@@ -21,7 +21,7 @@ use crate::modules::{
     }
 };
 use crate::modules::service::enums::SupportedTemplate;
-use crate::modules::service::projects::report_service::ReportListResponse;
+use crate::modules::service::projects::report_service::{OriginExcelDataResponse, ReportDetailResponse, ReportListResponse, SummaryResponse};
 use crate::modules::service::projects::site_service::{DeleteSiteResponse, ImportSiteResponse, SaveSiteResponse, SiteListResponse};
 
 #[tauri::command]
@@ -176,6 +176,37 @@ pub async fn handle_site_file(
 
     service.async_process_excel_files(file_path, project_number)
 }
+
+
+#[tauri::command]
+pub async fn analyze_report_data(
+    state: State<'_, AppState>, // 从状态中获取 AppState
+    report_number: String,
+    project_number: String,
+) -> Result<SummaryResponse, String>{
+    let service = &state.report_service;
+
+    // 删除工具
+    service.summary_report_data(&*report_number, &*project_number)
+}
+
+
+#[tauri::command]
+pub async fn fetch_report_detail(state: State<'_, AppState>,
+                           report_number: String) -> Result<ReportDetailResponse, String> {
+    let service = &state.report_service;
+    service.summary_report_detail(&*report_number)
+}
+
+#[tauri::command]
+pub async fn fetch_origin_detail(
+    state: State<'_, AppState>,
+    report_number: String,
+    source_file_name: String) -> Result<OriginExcelDataResponse, String> {
+    let service = &state.report_service;
+    service.origin_excel_data( &*report_number,&*source_file_name)
+}
+
 
 
 

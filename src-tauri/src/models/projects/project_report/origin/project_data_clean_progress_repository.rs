@@ -3,6 +3,21 @@ use crate::models::projects::project_report::origin::project_data_clean_progress
 use crate::models::projects::project_report::origin::schema::project_data_clean_progress::dsl::*;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
+use diesel::sql_query;
+use diesel::sql_types::Text;
+
+#[derive(QueryableByName, Debug)]
+struct SiteNumber {
+    #[sql_type = "Text"]
+    site_number: String,
+}
+
+#[derive(Debug)]
+pub struct DataCleanProgressSummary {
+    pub total_pages: i32,
+    pub total_verify_required: i32,
+    pub total_entered: i32,
+}
 
 pub struct ProjectDataCleanProgressRepository {
     pool: Pool<ConnectionManager<SqliteConnection>>, // 使用 SqliteConnection
@@ -61,4 +76,24 @@ impl ProjectDataCleanProgressRepository {
             .execute(&mut conn)
             .map_err(|e| e.to_string())
     }
+
+    // 查询 site_number（通过 SUBSTR 和 INSTR 函数处理 site 字段）
+    pub fn find_site_numbers(&self) -> Result<Vec<String>, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+
+        // 定义 SQL 查询
+        let query = r#"
+            SELECT SUBSTR(site, 1, INSTR(site, '-') - 1) AS site_number
+            FROM project_data_clean_progress
+            GROUP BY site;
+        "#;
+
+        // 执行原始 SQL 查询
+        sql_query(query)
+            .load::<SiteNumber>(&mut conn)
+            .map_err(|e| e.to_string())
+            .map(|results| results.into_iter().map(|r| r.site_number).collect())
+    }
+
+    // 获取汇总信息
 }

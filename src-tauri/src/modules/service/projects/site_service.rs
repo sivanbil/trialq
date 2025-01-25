@@ -22,8 +22,8 @@ pub struct ImportSiteResponse {
 #[derive(Serialize)]
 pub struct SiteListResponse {
     valid: bool,
-    sites: Vec<ProjectSite>, // 站点列表
-    total: i64,              // 总记录数
+    pub(crate) sites: Vec<ProjectSite>, // 站点列表
+    pub(crate) total: i64,              // 总记录数
     current_page: i64,       // 当前页码
     page_size: i64,          // 每页大小
 }
@@ -160,8 +160,8 @@ impl SiteService {
     }
 
     /// 检查站点是否存在，存在则返回 false，不存在则返回 true
-    pub fn not_exist(&self, site_name: String) -> Result<bool, String> {
-        let existing_site = self.repository.find_site_by_name(&site_name)?; // 处理 Result
+    pub fn not_exist(&self, site_no: String) -> Result<bool, String> {
+        let existing_site = self.repository.find_site_by_no(&site_no)?; // 处理 Result
 
         match existing_site {
             Some(_) => Ok(false), // 站点存在

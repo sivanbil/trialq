@@ -65,6 +65,15 @@ impl ProjectReportRepository {
             .map_err(|e| e.to_string())
     }
 
+    // 更新报告状态
+    pub fn update_report_state(&self, report_id: i32, new_state: i32) -> Result<usize, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+        diesel::update(project_report.find(report_id))
+            .set(state.eq(new_state)) // Update only the `status` field
+            .execute(&mut conn)
+            .map_err(|e| e.to_string())
+    }
+
     // 删除报告
     pub fn delete_report(&self, report_id: i32) -> Result<usize, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;

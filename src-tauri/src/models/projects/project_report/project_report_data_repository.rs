@@ -1,4 +1,3 @@
-// project_report_data_repository.rs
 use crate::models::projects::project_report::project_report_data_model::{NewProjectReportData, ProjectReportData};
 use crate::models::projects::project_report::schema::project_report_data::dsl::*;
 use diesel::prelude::*;
@@ -13,6 +12,7 @@ impl ProjectReportDataRepository {
         ProjectReportDataRepository { pool }
     }
 
+
     // 创建报告数据
     pub fn create_report_data(&self, new_report_data: NewProjectReportData) -> Result<ProjectReportData, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
@@ -20,6 +20,8 @@ impl ProjectReportDataRepository {
             .values(&new_report_data)
             .execute(&mut conn)
             .map_err(|e| e.to_string())?;
+
+        // 返回最新插入的记录
         project_report_data
             .order(id.desc())
             .first(&mut conn)
@@ -44,6 +46,17 @@ impl ProjectReportDataRepository {
             .optional()
             .map_err(|e| e.to_string())
     }
+
+    // 根据报告编号查询报告数据
+    pub fn find_report_data_by_no(&self, report_no: &str) -> Result<Vec<ProjectReportData>, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+        project_report_data
+            .filter(report_number.eq(report_no))
+            .load::<ProjectReportData>(&mut conn)
+            .map_err(|e| e.to_string())
+    }
+
+
 
     // 更新报告数据
     pub fn update_report_data(&self, report_id: i32, updated_report_data: NewProjectReportData) -> Result<usize, String> {

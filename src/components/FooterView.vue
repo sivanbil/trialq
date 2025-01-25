@@ -4,9 +4,9 @@
       <!-- 底部版权信息 -->
       <div class="border-gray-700 pt-6 text-center">
         <p class="text-sm text-gray-400">
-          &copy; {{ $slogan.year }} {{ $slogan.main }}. 保留所有权利. | 联系我们：<a href="mailto:{{ $slogan.email }}}" class="text-sm text-gray-400 hover:text-white transition-colors">
+          &copy; {{ $slogan.year }} {{ $slogan.main }}. 保留所有权利. | 联系我们：<span class="text-sm text-gray-400 ">
           {{ $slogan.email }}
-        </a>
+        </span>
         </p>
       </div>
     </div>

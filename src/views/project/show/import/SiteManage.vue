@@ -1,6 +1,6 @@
 <template>
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-    <div class="bg-white p-6 rounded-lg shadow-md w-11/12 max-h-[90vh] overflow-y-auto relative">
+    <div class="bg-white p-6 rounded-lg shadow-md w-11/12 max-h-[90vh] flex flex-col">
       <!-- 关闭按钮 -->
       <button
           @click="closeDialog"
@@ -11,6 +11,7 @@
         </svg>
       </button>
 
+      <!-- 标题 -->
       <h2 class="text-lg font-semibold mb-4">项目中心</h2>
 
       <!-- 添加中心按钮 -->
@@ -23,10 +24,10 @@
         </button>
       </div>
 
-      <!-- 中心列表 -->
-      <div v-if="!isFormOpen">
+      <!-- 列表区域（可滚动） -->
+      <div class="flex-1 overflow-y-auto">
         <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+          <thead class="bg-gray-50 sticky top-0">
           <tr>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               中心编号
@@ -70,121 +71,20 @@
           </tr>
           </tbody>
         </table>
-
-        <!-- 分页控件 -->
-        <div class="mt-1">
-          <!-- 分页控件 -->
-          <Pagination
-              v-if="centers.length > 0"
-              :currentPage="currentPage"
-              :totalPages="totalPages"
-              @update:currentPage="handlePageChange"
-          />
-        </div>
-
-        </div>
-
-      <!-- 添加/编辑中心表单 -->
-      <div v-if="isFormOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div class="bg-white p-6 rounded-lg shadow-md w-11/12">
-          <h3 class="text-lg font-semibold mb-4">{{ formData.siteId ? '编辑中心' : '添加中心' }}</h3>
-          <form @submit.prevent="handleSubmit">
-            <div class="space-y-4">
-              <!-- 中心编号 -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">
-                  中心编号
-                  <span class="text-red-500">*</span>
-                </label>
-                <input
-                    v-model="formData.siteNumber"
-                    type="text"
-                    placeholder="请输入中心编号"
-                    required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                />
-              </div>
-              <!-- 中心名称 -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">
-                  中心名称
-                </label>
-                <input
-                    v-model="formData.name"
-                    type="text"
-                    placeholder="请输入中心名称"
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                />
-              </div>
-              <!-- 负责 CRA -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">
-                  负责 CRA
-                </label>
-                <input
-                    v-model="formData.manager"
-                    type="text"
-                    placeholder="请输入负责 CRA"
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                />
-              </div>
-            </div>
-            <div class="mt-6 flex justify-end space-x-4">
-              <button
-                  type="button"
-                  @click="closeForm"
-                  class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
-              >
-                取消
-              </button>
-              <button
-                  type="submit"
-                  class="px-4 py-2 bg-purple-800 text-white rounded-md hover:bg-purple-700"
-              >
-                保存
-              </button>
-            </div>
-          </form>
-        </div>
       </div>
 
-      <!-- 批量导入抽屉 -->
-      <div v-if="isImportDrawerOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end">
-        <div class="bg-white p-6 rounded-lg shadow-md w-11/12 h-full">
-          <h3 class="text-lg font-semibold mb-4">批量导入中心</h3>
-          <div>
-            <label class="block text-sm font-medium text-gray-700">
-              选择文件
-              <span class="text-red-500">*</span>
-            </label>
-            <button
-                @click="openFilePicker"
-                class="mt-1 block w-full px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 text-left"
-            >
-              {{ filePath ? filePath : '点击选择文件' }}
-            </button>
-          </div>
-          <div class="mt-6 flex justify-end space-x-4">
-            <button
-                type="button"
-                @click="isImportDrawerOpen = false"
-                class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
-            >
-              取消
-            </button>
-            <button
-                @click="handleFileUpload"
-                :disabled="!filePath"
-                class="px-4 py-2 bg-purple-800 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
-            >
-              导入
-            </button>
-          </div>
-        </div>
+      <!-- 分页控件 -->
+      <div class="mt-4">
+        <Pagination
+            v-if="centers.length > 0"
+            :currentPage="currentPage"
+            :totalPages="totalPages"
+            @update:currentPage="handlePageChange"
+        />
       </div>
 
       <!-- 批量导入按钮 -->
-      <div class="mt-6 text-right">
+      <div class="mt-4 text-right">
         <button
             @click="isImportDrawerOpen = true"
             class="px-4 py-2 bg-purple-700 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"

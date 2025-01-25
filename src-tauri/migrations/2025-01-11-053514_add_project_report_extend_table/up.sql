@@ -15,7 +15,7 @@ create table tools (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     link_url TEXT NOT NULL UNIQUE,
-    sort_value INTEGER NOT NULL UNIQUE,
+    sort_value INTEGER NOT NULL,
     is_valid BOOL NOT NULL ,
     UNIQUE  (link_url)
 );
@@ -71,29 +71,22 @@ create table project_report_data (
     site TEXT NOT NULL UNIQUE,
     site_name TEXT NOT NULL,
     cra TEXT NOT NULL,
-    enrollment TEXT NOT NULL,
-    pages TEXT NOT NULL,
-    pages_entered TEXT NOT NULL,
-    missing_pages TEXT NOT NULL,
-    sdv_backlog TEXT NOT NULL,
+    pages INTEGER NOT NULL,
+    pages_entered INTEGER NOT NULL,
+    missing_pages INTEGER NOT NULL,
+    md_gt7 INTEGER NOT NULL,
+    md_gt14 INTEGER NOT NULL,
+    sdv_backlog INTEGER NOT NULL,
     edc_status_comment TEXT,
-    plan_rmv TEXT,
-    latest_rmv TEXT
-);
-
--- 报告汇总表扩展信息
-create table project_report_extend_data (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project_report_data_id  INTEGER NOT NULL,
-    data_group TEXT NOT NULl,
     percent_pages_entered TEXT NOT NULL,
     percent_pages_sdved TEXT NOT NULL,
-    answered_query TEXT NOT NULL,
-    opened_query TEXT NOT NULL,
+    answered_query INTEGER NOT NULL,
+    opened_query INTEGER NOT NULL,
     oq_gt7 INTEGER NOT NULL,
     oq_gt14 INTEGER NOT NULL,
     op_gt21 INTEGER NOT NULL,
-    op_gt30 INTEGER NOT NULL
+    op_gt30 INTEGER NOT NULL,
+    report_number TEXT NOT NULL
 );
 
 -- 项目missing_page数据

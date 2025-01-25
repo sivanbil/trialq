@@ -1,8 +1,60 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-50 flex flex-col">
+    <!-- 头部 -->
     <HeaderView />
-    <div class="mx-auto p-4">
-      <div class="bg-white p-2 rounded-lg shadow-md text-left">
+
+    <!-- 内容区域 -->
+    <div class="flex-1 overflow-y-auto p-4">
+      <div class="bg-white p-6 rounded-lg shadow-md text-left mx-auto">
+        <!-- 工具区块按钮 -->
+        <div class="flex space-x-4 mb-6">
+          <!-- 常用工具按钮 -->
+          <button
+              @click="openDefaultToolsDialog"
+              class="px-4 py-2 bg-purple-800 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            默认工具
+          </button>
+
+          <!-- 我的工具按钮 -->
+          <button
+              @click="openUserToolsDialog"
+              class="px-4 py-2 bg-purple-800 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            我的工具
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部 -->
+    <FooterView />
+
+    <!-- 常用工具弹窗 -->
+    <SlotDialog :isOpen="isDefaultToolsDialogOpen" title="常用工具" @close="closeDefaultToolsDialog">
+      <div class="space-y-3">
+        <div
+            v-for="(tool, index) in defaultTools"
+            :key="index"
+            class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+        >
+          <a
+              :href="tool.link_url"
+              target="_blank"
+              class="text-left text-purple-800 font-medium hover:text-purple-700 transition-colors"
+          >
+            {{ tool.name }}
+            <p>{{tool.link_url}}</p>
+          </a>
+          <!-- 默认工具不允许删除 -->
+          <span class="text-sm text-gray-500">默认工具</span>
+        </div>
+      </div>
+    </SlotDialog>
+
+    <!-- 我的工具弹窗 -->
+    <SlotDialog :isOpen="isUserToolsDialogOpen" title="我的工具" @close="closeUserToolsDialog">
+      <div>
         <!-- 添加工具按钮 -->
         <div class="mb-6 text-right">
           <button
@@ -13,106 +65,65 @@
           </button>
         </div>
 
-        <!-- 默认工具区块 -->
-        <div class="mb-8">
-          <h2 class="text-lg font-semibold mb-4">默认工具</h2>
-          <div class="space-y-3">
-            <div
-                v-for="(tool, index) in defaultTools"
-                :key="index"
-                class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
-            >
-              <a
-                  :href="tool.url"
-                  target="_blank"
-                  class="text-purple-800 font-medium hover:text-purple-700 transition-colors"
-              >
-                {{ tool.name }}
-              </a>
-              <!-- 默认工具不允许删除 -->
-              <span class="text-sm text-gray-500">默认工具</span>
-            </div>
-          </div>
+        <!-- 我的工具列表 -->
+        <div v-if="userTools.length === 0" class="text-gray-500">
+          暂无工具，点击右上角按钮添加。
         </div>
-
-        <!-- 用户工具区块 -->
-        <div>
-          <h2 class="text-lg font-semibold mb-4">我的工具</h2>
-          <div v-if="userTools.length === 0" class="text-gray-500">
-            暂无工具，点击右上角按钮添加。
-          </div>
-          <div v-else class="space-y-3">
-            <div
-                v-for="(tool, index) in paginatedUserTools"
-                :key="index"
-                class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+        <div v-else class="space-y-3">
+          <div
+              v-for="(tool, index) in userTools"
+              :key="index"
+              class="text-left flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+          >
+            <a
+                :href="tool.link_url"
+                target="_blank"
+                class="text-purple-800 font-medium hover:text-purple-700 transition-colors"
             >
-              <a
-                  :href="tool.link_url"
-                  target="_blank"
-                  class="text-purple-800 font-medium hover:text-purple-700 transition-colors"
-              >
-                {{ tool.name }}
-              </a>
-              <!-- 用户工具允许删除 -->
-              <button
-                  @click="removeTool(index)"
-                  class="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-              >
-                删除
-              </button>
-            </div>
+              {{ tool.name }}
+              <p>{{tool.link_url}}</p>
+            </a>
+            <!-- 用户工具允许删除 -->
+            <button
+                @click="removeTool(index)"
+                class="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+            >
+              删除
+            </button>
+          </div>
 
+          <!-- 分页控件 -->
+          <!-- 分页控件 -->
+          <div class="mt-1">
             <!-- 分页控件 -->
-            <div v-if="userTools.length > itemsPerPage" class="flex items-center justify-center gap-3 mt-6">
-              <button
-                  @click="currentPage = 1"
-                  :disabled="currentPage === 1"
-                  class="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                首页
-              </button>
-              <button
-                  @click="currentPage--"
-                  :disabled="currentPage === 1"
-                  class="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                上一页
-              </button>
-              <span class="text-sm text-gray-600">第 {{ currentPage }} 页 / 共 {{ totalUserPages }} 页</span>
-              <button
-                  @click="currentPage++"
-                  :disabled="currentPage === totalUserPages"
-                  class="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                下一页
-              </button>
-              <button
-                  @click="currentPage = totalUserPages"
-                  :disabled="currentPage === totalUserPages"
-                  class="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                末页
-              </button>
-            </div>
+            <Pagination
+                v-if="userTools.length > 0"
+                :currentPage="currentPage"
+                :totalPages="totalUserPages"
+                @update:currentPage="handlePageChange"
+            />
           </div>
-        </div>
 
-        <!-- 抽屉表单 -->
-        <ToolFormDrawer :isOpen="isDrawerOpen" @close="closeDrawer" @save="handleSave" />
+        </div>
       </div>
-    </div>
-    <FooterView />
+    </SlotDialog>
+
+    <!-- 抽屉表单 -->
+    <ToolFormDrawer :isOpen="isDrawerOpen" @close="closeDrawer" @save="handleSave" />
   </div>
 </template>
 
 <script>
 import ToolFormDrawer from './ToolDrawerForm.vue'; // 引入抽屉表单组件
+import SlotDialog from '@/components/SlotDialog.vue';
+import Pagination from "@/components/PaginationView.vue"; // 引入弹窗组件
 
 export default {
   name: 'ClinicalTools',
   components: {
+    Pagination,
     ToolFormDrawer,
+    SlotDialog,
   },
   data() {
     return {
@@ -126,27 +137,40 @@ export default {
       // 分页相关
       currentPage: 1, // 当前页码
       itemsPerPage: 5, // 每页显示的工具数量
+      totalUserPages: 1,
+      // 弹窗相关状态
+      isDefaultToolsDialogOpen: false, // 常用工具弹窗
+      isUserToolsDialogOpen: false, // 我的工具弹窗
       // 抽屉相关状态
       isDrawerOpen: false,
     };
-  },
-  computed: {
-    // 当前页的用户工具列表
-    paginatedUserTools() {
-      const start = (this.currentPage - 1) * this.itemsPerPage;
-      const end = start + this.itemsPerPage;
-      return this.userTools.slice(start, end);
-    },
-    // 用户工具的总页数
-    totalUserPages() {
-      return Math.ceil(this.userTools.length / this.itemsPerPage);
-    },
   },
   mounted() {
     // 从后端获取用户工具列表
     this.fetchTools();
   },
   methods: {
+    // 处理页码变化
+    handlePageChange(newPage) {
+      this.currentPage = newPage;
+      this.fetchTools();
+    },
+    // 打开常用工具弹窗
+    openDefaultToolsDialog() {
+      this.isDefaultToolsDialogOpen = true;
+    },
+    // 关闭常用工具弹窗
+    closeDefaultToolsDialog() {
+      this.isDefaultToolsDialogOpen = false;
+    },
+    // 打开我的工具弹窗
+    openUserToolsDialog() {
+      this.isUserToolsDialogOpen = true;
+    },
+    // 关闭我的工具弹窗
+    closeUserToolsDialog() {
+      this.isUserToolsDialogOpen = false;
+    },
     // 打开抽屉
     openDrawer() {
       this.isDrawerOpen = true;
@@ -173,12 +197,7 @@ export default {
 
         if (response.valid) {
           // 从前端的 userTools 列表中移除工具
-          this.userTools.splice(globalIndex, 1);
-
-          // 如果删除后当前页没有数据，且不是第一页，则跳转到上一页
-          if (this.paginatedUserTools.length === 0 && this.currentPage > 1) {
-            this.currentPage--;
-          }
+          await this.fetchTools();
 
           this.$showModal('删除成功');
         } else {
@@ -200,6 +219,7 @@ export default {
 
         if (response.valid) {
           this.userTools = response.tools; // 更新用户工具列表
+          this.totalUserPages = Math.ceil(response.total / this.itemsPerPage);
         }
       } catch (error) {
         console.error('Failed to fetch tools:', error);
@@ -214,8 +234,7 @@ export default {
         });
         console.log(response);
         if (response.valid) {
-
-          this.userTools.push(response.tool); // 添加到用户工具列表
+          await this.fetchTools();
           this.$showModal('存储成功');
         } else {
           this.$showModal('存储失败');
@@ -224,7 +243,6 @@ export default {
         this.$showModal('存储失败.error:', error);
       }
     },
-
   },
 };
 </script>

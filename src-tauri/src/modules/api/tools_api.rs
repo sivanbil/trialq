@@ -1,6 +1,6 @@
 use crate::AppState;
 use tauri::State;
-
+use crate::modules::service::projects::report_service::SummaryResponse;
 use crate::modules::service::tools::tool_service::{
     ToolListResponse,
     SaveToolResponse,

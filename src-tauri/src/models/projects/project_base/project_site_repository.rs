@@ -101,6 +101,17 @@ impl ProjectSiteRepository {
             .map_err(|e| e.to_string())
     }
 
+    // 根据项目站点名称查找项目站点
+    pub fn find_site_by_no(&self, site_no: &str) -> Result<Option<ProjectSite>, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+        // 使用表字段名进行过滤
+        project_site
+            .filter(site_number.eq(site_no))
+            .first::<ProjectSite>(&mut conn)
+            .optional()
+            .map_err(|e| e.to_string())
+    }
+
     // 根据项目站点 ID 查询项目站点信息
     pub fn find_site_by_id(&self, site_id: i32) -> Result<Option<ProjectSite>, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;

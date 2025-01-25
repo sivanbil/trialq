@@ -7,14 +7,22 @@ pub struct ProjectReportData {
     pub site: String,
     pub site_name: String,
     pub cra: String,
-    pub enrollment: String,
-    pub pages: String,
-    pub pages_entered: String,
-    pub missing_pages: String,
-    pub sdv_backlog: String,
+    pub pages: i32,
+    pub pages_entered: i32,
+    pub missing_pages: i32,
+    pub md_gt7: i32,
+    pub md_gt14: i32,
+    pub sdv_backlog: i32,
     pub edc_status_comment: String,
-    pub plan_rmv: String,
-    pub latest_rmv: String,
+    pub percent_pages_entered: String, // 改为 f64
+    pub percent_pages_sdved: String,   // 改为 f64
+    pub answered_query: i32,        // 改为 i32
+    pub opened_query: i32,          // 改为 i32
+    pub op_gt7: i32,
+    pub op_gt14: i32,
+    pub op_gt21: i32,
+    pub op_gt30: i32,
+    pub report_number: String
 }
 
 // project_report_data_model.rs
@@ -24,12 +32,20 @@ pub struct NewProjectReportData {
     pub site: String,
     pub site_name: String,
     pub cra: String,
-    pub enrollment: String,
-    pub pages: String,
-    pub pages_entered: String,
-    pub missing_pages: String,
-    pub sdv_backlog: String,
+    pub pages: i32,
+    pub pages_entered: i32,
+    pub missing_pages: i32,
+    pub md_gt7: i32,
+    pub md_gt14: i32,
+    pub sdv_backlog: i32,
     pub edc_status_comment: String,
-    pub plan_rmv: String,
-    pub latest_rmv: String,
+    pub percent_pages_entered: String,
+    pub percent_pages_sdved: String,
+    pub answered_query: i32,
+    pub opened_query: i32,
+    pub op_gt7: i32,
+    pub op_gt14: i32,
+    pub op_gt21: i32,
+    pub op_gt30: i32,
+    pub report_number: String
 }

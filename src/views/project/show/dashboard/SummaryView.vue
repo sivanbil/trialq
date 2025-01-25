@@ -3,28 +3,19 @@
     <div class="mx-auto bg-white shadow-md rounded-lg p-6">
       <!-- 数据检查 -->
       <div v-if="hasData">
-        <!-- 按钮组 -->
-        <div class="flex justify-between items-center mb-6">
-          <button
-              @click="exportTable"
-              class="btn-success"
-          >
-            导出表格
-          </button>
-        </div>
+
         <!-- 表格容器 -->
-        <SummaryTable :tableData="tableData" :merges="merges" />
+        <SummaryTable :tableData="tableData" :merges="merges" :exportFileNamePrefix="reportNumber" />
       </div>
       <div v-else>
-        该报告已作废，没有任何数据
+        没有任何数据
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import * as XLSX from 'xlsx';
-import SummaryTable from './SummaryTable.vue'; // 引入表格组件
+import SummaryTable from '@/components/SummaryTable.vue'; // 引入表格组件
 
 export default {
   name: 'SummaryView',
@@ -48,51 +39,18 @@ export default {
     };
   },
   computed: {
+    // 提取表头
+    headers() {
+      if (!this.tableData || this.tableData.length === 0) return [];
+      return Object.keys(this.tableData[0]); // 获取第一个对象的键作为表头
+    },
     // 检查是否有数据
     hasData() {
-      return (
-          Array.isArray(this.tableData) &&
-          this.tableData.length > 0 &&
-          Array.isArray(this.merges) &&
-          this.merges.length > 0
-      );
-    },
-    // 计算列总和
-    columnTotals() {
-      if (!this.hasData) return []; // 如果没有数据，返回空数组
-
-      const totals = [];
-      for (let c = 1; c < this.tableData[0].length; c++) {
-        let total = 0;
-        for (let r = 2; r < this.tableData.length; r++) {
-          const value = parseFloat(this.tableData[r][c]);
-          if (!isNaN(value)) {
-            total += value;
-          }
-        }
-        totals.push(total);
-      }
-      return totals;
+      return this.tableData && this.tableData.length > 0;
     },
   },
   methods: {
-    // 导出表格
-    exportTable() {
-      if (!this.hasData) {
-        alert('没有数据可导出');
-        return;
-      }
 
-      const table = document.querySelector('table');
-      const ws = XLSX.utils.table_to_sheet(table);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-      XLSX.writeFile(wb, 'exported_table.xlsx');
-    },
-    // 返回工作空间
-    goToWorkspace() {
-      window.location.href = '/workspace.html';
-    },
     // 获取单元格的 colspan
     getColSpan(rowIndex, cellIndex) {
       if (!Array.isArray(this.merges) || this.merges.length === 0) return 1; // 如果没有合并配置，返回默认值
@@ -104,12 +62,23 @@ export default {
       }
       return 1;
     },
+    // 获取报告详情
+    async fetchReportDetail() {
+      try {
+        const response = await this.$rustInvoke("fetch_report_detail", {reportNumber: this.reportNumber});
+        if (response && response.valid) {
+          this.tableData = response.reportData;
+        } else {
+          console.error('No data returned from fetch_report_detail');
+        }
+      } catch (error) {
+        console.error('Error fetching report detail:', error);
+      }
+    },
   },
   mounted() {
-    // 组件挂载时计算列总和
-    this.$nextTick(() => {
-      this.columnTotals;
-    });
+    // 组件挂载时获取报告详情
+    this.fetchReportDetail();
   },
 };
 </script>
