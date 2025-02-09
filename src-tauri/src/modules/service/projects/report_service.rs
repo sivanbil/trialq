@@ -6,6 +6,7 @@ use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::sqlite::{Sqlite, SqliteConnection};
 use std::sync::Arc;
 use std::time::SystemTime;
+use chrono::{NaiveDate, NaiveDateTime, Utc};
 use date_formatter::utils::format_date;
 use diesel::serialize::ToSql;
 use diesel::sql_types::Text;
@@ -509,7 +510,19 @@ impl ProjectReportService {
                 self.query_detail_repository
                     .find_query_details_by_report_number(report_number)?
                     .into_iter()
-                    .map(|d| serde_json::to_value(d).unwrap())
+                    .map(|d|  {
+                        let mut value = serde_json::to_value(&d).unwrap();
+                        if let Ok(date) = NaiveDate::parse_from_str(&d.qry_open_date_localized, "%Y/%m/%d") {
+                            let days = Utc::now().date_naive().signed_duration_since(date).num_days();
+                            if let serde_json::Value::Object(ref mut obj) = value {
+                                obj.insert("op_gt7".to_string(), serde_json::Value::Number(((days > 7) as u8).into()));
+                                obj.insert("op_gt14".to_string(), serde_json::Value::Number(((days > 14) as u8).into()));
+                                obj.insert("op_gt21".to_string(), serde_json::Value::Number(((days > 21) as u8).into()));
+                                obj.insert("op_gt30".to_string(), serde_json::Value::Number(((days >= 30) as u8).into()));
+                            }
+                        }
+                        value
+                    })
                     .collect()
             }
             "data_clean_progress" => {
@@ -523,7 +536,16 @@ impl ProjectReportService {
                 self.missing_page_repository
                     .find_missing_pages_by_report_number(report_number)?
                     .into_iter()
-                    .map(|d| serde_json::to_value(d).unwrap())
+                    .map(|d| {
+                        let mut value = serde_json::to_value(&d).unwrap();
+                        let days = d.days_of_missing_pages;
+                        if let serde_json::Value::Object(ref mut obj) = value {
+                            obj.insert("md_gt7".to_string(), serde_json::Value::Number(((days > 7) as u8).into()));
+                            obj.insert("md_gt14".to_string(), serde_json::Value::Number(((days > 14) as u8).into()));
+                        }
+                        value
+                    }
+                    )
                     .collect()
             }
             _ => return Err("Unknown file type".to_string()),

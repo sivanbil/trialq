@@ -125,6 +125,8 @@ export default {
           instance_name: 'Instance Name',
           data_page_name: 'Data Page Name',
           days_of_missing_pages: 'Days of missing Pages',
+          md_gt7: 'MP＞7days',
+          md_gt14: 'MP>14days',
         },
         {
           study: 'Study',
@@ -136,6 +138,10 @@ export default {
           log_id: 'Log#',
           qry_open_date: 'QryOpenDate',
           qry_open_date_localized: 'QryOpenDateLocalized',
+          op_gt7: '>7days',
+          op_gt14: '>14days',
+          op_gt21: '＞21days',
+          op_gt30: '≥30days',
           qry_open_by: 'QryOpenBy',
           query_text: 'QueryText',
           marking_group_name: 'MarkingGroupName',
@@ -144,7 +150,6 @@ export default {
           qry_response_user: 'QryRespond',
           qry_answer: 'AnswerText',
           qry_status: 'Name',
-
         },
         {
           study: 'Study',

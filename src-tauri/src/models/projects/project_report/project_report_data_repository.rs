@@ -52,6 +52,7 @@ impl ProjectReportDataRepository {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
         project_report_data
             .filter(report_number.eq(report_no))
+            .order(site.asc()) // 根据 site 字段升序排列
             .load::<ProjectReportData>(&mut conn)
             .map_err(|e| e.to_string())
     }

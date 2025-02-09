@@ -30,7 +30,7 @@ impl ProjectMissingPageRepository {
     }
 
     // 根据报告编号查询缺失页面记录
-    pub fn find_missing_pages_by_report_number(&self, report_no: &str) -> Result<Vec<ProjectMissingPage>, String> {
+    pub fn  find_missing_pages_by_report_number(&self, report_no: &str) -> Result<Vec<ProjectMissingPage>, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
         project_missing_page
             .filter(report_number.eq(report_no))
