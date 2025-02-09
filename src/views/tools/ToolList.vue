@@ -174,6 +174,7 @@ export default {
     // 打开抽屉
     openDrawer() {
       this.isDrawerOpen = true;
+      this.closeUserToolsDialog();
     },
     // 关闭抽屉
     closeDrawer() {

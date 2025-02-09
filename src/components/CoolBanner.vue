@@ -20,7 +20,7 @@
   justify-content: center;
   align-items: center;
   height: 200px;
-  background: linear-gradient(135deg, #1a1a1a, #003366);
+  background: linear-gradient(135deg, #3d3d3d, #003366);
   border-radius: 10px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }

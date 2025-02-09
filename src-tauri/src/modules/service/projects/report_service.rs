@@ -398,21 +398,39 @@ impl ProjectReportService {
                 _ => {
                 }
             }
-            let pages = 0;
-            let pages_entered = 0;
-            let sdv_backlog = 0;
-            let percent_pages_entered = "0.0".to_string();
-            let percent_pages_sdved = "0.0".to_string();
 
-            let answered_query = 0;
-            let opened_query = 0;
-            let op_gt7 = 0;
-            let op_gt14 = 0;
-            let op_gt21 = 0;
-            let op_gte30 = 0;
+            let clean_data_stats = self.clean_data_repository
+                .find_data_clean_progress_stats(report_number, &site_number).unwrap();
+            // clean文件里面的记录
+            let pages = clean_data_stats.total_pages; // 总页数;
+            // 查询所有entered
+            let pages_entered = clean_data_stats.total_entered; // 已录入的页数;
+            // 汇总所有为1的verify required
+            let sdv_backlog = clean_data_stats.total_verify_required; // 需要验证的页数;
 
-            let answered_query = 0;
-            let opened_query = 0;
+            let percent_pages_entered = if pages > 0 {
+                format!("{:.2}", (pages_entered as f64 / pages as f64) * 100.0)
+            } else {
+                "0.0".to_string()
+            };
+
+            let percent_pages_sdved = if pages > 0 {
+                format!("{:.2}", (sdv_backlog as f64 / pages as f64) * 100.0)
+            } else {
+                "0.0".to_string()
+            };
+
+            // 查询查询详情统计数据
+            let query_stats = self.query_detail_repository
+                .get_query_statistics(report_number, &site_number).unwrap();
+            let answered_query = query_stats.answered_query_count;
+            let opened_query = query_stats.opened_query_count;
+            let op_gt7 = query_stats.query_age_distribution.between_7_and_14_days + query_stats.query_age_distribution.more_than_30_days;
+            let op_gt14 = query_stats.query_age_distribution.between_14_and_21_days + query_stats.query_age_distribution.more_than_30_days;
+            let op_gt21 = query_stats.query_age_distribution.between_21_and_30_days + query_stats.query_age_distribution.more_than_30_days;
+            let op_gte30 = query_stats.query_age_distribution.more_than_30_days;
+
+
             // 看看每个中心总页数
             // missing-subject_id
             // data_clean -subject
@@ -420,23 +438,23 @@ impl ProjectReportService {
             // 以上数据取唯一，按照每个报告的每个site进行分组
             let data = NewProjectReportData {
                 site: site.site_number.to_string(),
-                site_name: "".to_string(),
-                cra: "".to_string(),
-                pages,
-                pages_entered,
+                site_name: site.site_name.to_string(),
+                cra: site.site_cra.to_string(),
+                pages: pages.try_into().unwrap(),
+                pages_entered: pages_entered.try_into().unwrap(),
                 missing_pages,
                 md_gt7,
                 md_gt14,
-                sdv_backlog,
+                sdv_backlog: sdv_backlog.try_into().unwrap(),
                 edc_status_comment: "".to_string(),
                 percent_pages_entered,
                 percent_pages_sdved,
-                answered_query,
-                opened_query,
-                op_gt7: 0,
-                op_gt14: 0,
-                op_gt21: 0,
-                op_gt30: 0,
+                answered_query: answered_query.try_into().unwrap(),
+                opened_query: opened_query.try_into().unwrap(),
+                op_gt7,
+                op_gt14,
+                op_gt21,
+                op_gt30: op_gte30,
                 report_number: format!("{}", report_number),
             };
             self.data_repository.create_report_data(data).expect("TODO: panic message");

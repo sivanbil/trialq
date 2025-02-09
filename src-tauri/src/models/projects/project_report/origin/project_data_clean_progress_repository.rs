@@ -13,12 +13,11 @@ struct SiteNumber {
 }
 
 #[derive(Debug)]
-pub struct DataCleanProgressSummary {
-    pub total_pages: i32,
-    pub total_verify_required: i32,
-    pub total_entered: i32,
+pub struct DataCleanProgressStats {
+    pub total_pages: i64,          // 总页数
+    pub total_entered: i64,        // 已录入的页数
+    pub total_verify_required: i64, // 需要验证的页数
 }
-
 pub struct ProjectDataCleanProgressRepository {
     pool: Pool<ConnectionManager<SqliteConnection>>, // 使用 SqliteConnection
 }
@@ -96,4 +95,26 @@ impl ProjectDataCleanProgressRepository {
     }
 
     // 获取汇总信息
+    // 获取数据清理进度统计信息
+    pub fn find_data_clean_progress_stats(&self, report_number_str: &str, site_number: &str) -> Result<DataCleanProgressStats, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+        let result = project_data_clean_progress
+            .filter(report_number.eq(report_number_str))
+            .filter(site.like(format!("{}%", site_number))) // 假设 site 字段以 site_number 开头
+            .select((
+                diesel::dsl::count(id).nullable(),
+                diesel::dsl::sum(entered).nullable(),
+                diesel::dsl::sum(verify_required).nullable(),
+            ))
+            .first::<(Option<i64>, Option<i64>, Option<i64>)>(&mut conn)
+            .map_err(|e| e.to_string())?;
+        let total_pages = result.0.unwrap_or(0);
+        let total_entered = result.1.unwrap_or(0);
+        let total_verify_required = result.2.unwrap_or(0);
+        Ok(DataCleanProgressStats {
+            total_pages,
+            total_entered,
+            total_verify_required,
+        })
+    }
 }
