@@ -16,7 +16,7 @@ html,body {
 .app-container {
     display: flex;
     flex-direction: column;
-    min-height: 48vh;
+    min-height: 40vh;
     margin: 0 auto;
     background-color: #fff;
 }

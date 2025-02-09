@@ -1,5 +1,5 @@
 <template>
-  <footer class="bg-gray-800 text-white py-6" style="position: fixed;width: 100%;bottom: 0;">
+  <footer class="bg-gray-800 text-white py-6" style="position: fixed;z-index:10;width: 100%;bottom: 0;">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- 底部版权信息 -->
       <div class="border-gray-700 pt-6 text-center">

@@ -62,7 +62,7 @@ export default {
       tabs: [
         { label: '项目数据维护' },
         { label: 'Excel工作台' },
-        { label: '其他' },
+        { label: '更多' },
       ],
       // 当前激活的标签页索引
       activeTab: 0,

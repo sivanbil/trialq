@@ -212,7 +212,8 @@
           "
             class="px-4 py-2 bg-purple-800 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
-          导入
+          <span v-if="currentStep === 3">导入</span>
+          <span v-else>下一步</span>
         </button>
         <button
             v-if="currentStep === 4"

@@ -3,6 +3,7 @@
   <div
       v-if="isOpen"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+      style="z-index: 100"
       @click.self="closeDialog"
   >
     <!-- 对话框内容 -->

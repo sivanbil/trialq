@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="z-index: 100">
     <div class="bg-white p-6 rounded-lg shadow-md w-11/12 max-h-[90vh] flex flex-col">
       <!-- 关闭按钮 -->
       <button
@@ -14,8 +14,16 @@
       <!-- 标题 -->
       <h2 class="text-lg font-semibold mb-4">项目中心</h2>
 
-      <!-- 添加中心按钮 -->
-      <div class="mb-4 text-right">
+      <!-- 按钮容器 -->
+      <div class="flex justify-end mb-4 space-x-4">
+        <!-- 批量导入按钮 -->
+        <button
+            @click="isImportDrawerOpen = true"
+            class="px-4 py-2 bg-purple-700 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
+          批量导入
+        </button>
+        <!-- 添加中心按钮 -->
         <button
             @click="openCenterForm"
             class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -83,15 +91,107 @@
         />
       </div>
 
-      <!-- 批量导入按钮 -->
-      <div class="mt-4 text-right">
-        <button
-            @click="isImportDrawerOpen = true"
-            class="px-4 py-2 bg-purple-700 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
-          批量导入
-        </button>
+      <!-- 添加/编辑中心表单弹窗 -->
+      <div v-if="isFormOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="z-index: 100;">
+        <div class="bg-white p-6 rounded-lg shadow-md w-11/12 max-w-md">
+          <!-- 关闭按钮 -->
+          <button
+              @click="closeForm"
+              class="absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          <!-- 表单标题 -->
+          <h3 class="text-lg font-semibold mb-4">{{ formData.siteId ? '编辑中心' : '添加中心' }}</h3>
+
+          <!-- 表单内容 -->
+          <form @submit.prevent="handleSubmit">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">中心编号</label>
+                <input
+                    v-model="formData.siteNumber"
+                    type="text"
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    required
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">中心名称</label>
+                <input
+                    v-model="formData.name"
+                    type="text"
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">负责 CRA</label>
+                <input
+                    v-model="formData.manager"
+                    type="text"
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <!-- 提交按钮 -->
+            <div class="mt-6 text-right">
+              <button
+                  type="submit"
+                  class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {{ formData.siteId ? '保存' : '添加' }}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
+
+      <!-- 批量导入抽屉 -->
+      <div v-if="isImportDrawerOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="z-index: 100;">
+        <div class="bg-white p-6 rounded-lg shadow-md w-11/12 max-w-md">
+
+
+          <!-- 抽屉标题 -->
+          <h3 class="text-lg font-semibold mb-4">批量导入</h3>
+          <!-- 关闭按钮 -->
+          <button
+              @click="isImportDrawerOpen = false"
+              class="absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <!-- 文件选择 -->
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">选择文件</label>
+              <input
+                  type="file"
+                  @change="handleFileSelect"
+                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  accept=".xlsx, .xls"
+              />
+            </div>
+          </div>
+
+          <!-- 提交按钮 -->
+          <div class="mt-6 text-right">
+            <button
+                @click="handleFileUpload"
+                class="px-4 py-2 bg-purple-700 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              导入
+            </button>
+          </div>
+        </div>
+      </div>
+
+
     </div>
   </div>
 </template>
