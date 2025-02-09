@@ -70,9 +70,9 @@
     </SlotDialog>
 
     <!-- 查看源文件详情的 Dialog -->
-    <SlotDialog :isOpen="isSourceFileDialogOpen" title="源文件详情" @close="closeSourceFileDialog">
+    <SlotDialog :isOpen="isSourceFileDialogOpen" title="源文件详情" @close="closeSourceFileDialog" :showConfirm="false">
       <div v-if="sourceFileDetail" class="p-4">
-        <SummaryTable :tableData="sourceFileDetail" :merges="[]" :exportFileNamePrefix="sourceFileName" />
+        <SummaryTable :tableData="sourceFileDetail" :merges="[]" :exportFileNamePrefix="sourceFileName" :headers="sourceFileHeaders" />
       </div>
       <div v-else class="text-center py-6 text-gray-500">
         加载中...
@@ -114,7 +114,50 @@ export default {
       isSourceFileDialogOpen: false,
       reportNumber: '',
       sourceFileDetail: null,
+      sourceFileHeaders: [],
+      // header表头
+      sourceFileHeadersMap: [
+        {
+          project_name: 'Project Name',
+          site_name: 'Site Name',
+          site_number: 'Site Number',
+          subject_id: 'Subject ID',
+          instance_name: 'Instance Name',
+          data_page_name: 'Data Page Name',
+          days_of_missing_pages: 'Days of missing Pages',
+        },
+        {
+          study: 'Study',
+          site_name: 'SiteName',
+          study_environment_site: 'StudyEnvironmentSiteNumber',
+          subject_name: 'SubjectName',
+          folder: 'Folder',
+          form: 'Form',
+          log_id: 'Log#',
+          qry_open_date: 'QryOpenDate',
+          qry_open_date_localized: 'QryOpenDateLocalized',
+          qry_open_by: 'QryOpenBy',
+          query_text: 'QueryText',
+          marking_group_name: 'MarkingGroupName',
+          qry_response_date: 'QryResponseDate',
+          qry_response_date_localized: 'QryResponseDateLocalized',
+          qry_response_user: 'QryRespond',
+          qry_answer: 'AnswerText',
+          qry_status: 'Name',
+
+        },
+        {
+          study: 'Study',
+          site: 'Site',
+          subject: 'Subject',
+          folder_name: 'Folder Name',
+          page: 'Page',
+          entered: 'Entered',
+          verify_required: 'Verify Required',
+        }
+      ],
       sourceFileName: '',
+
     };
   },
   computed: {
@@ -218,6 +261,13 @@ export default {
         if (response.valid) {
           this.sourceFileName = sourceFileName;
           this.sourceFileDetail = response.data;
+          if (this.sourceFileName.indexOf("missing") > -1) {
+            this.sourceFileHeaders = this.sourceFileHeadersMap[0];
+          } else if (this.sourceFileName.indexOf("query") > -1) {
+            this.sourceFileHeaders = this.sourceFileHeadersMap[1];
+          } else {
+            this.sourceFileHeaders = this.sourceFileHeadersMap[2];
+          }
           this.isSourceFileDialogOpen = true;
         } else {
           this.$showModal('获取数据失败，请重试！');

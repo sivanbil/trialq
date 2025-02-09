@@ -30,7 +30,7 @@
       </div>
 
       <!-- 内容插槽 -->
-      <div class="mb-4">
+      <div>
         <slot></slot>
       </div>
 

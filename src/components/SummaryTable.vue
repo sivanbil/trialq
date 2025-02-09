@@ -1,15 +1,15 @@
 <template>
   <!-- 按钮组 -->
-  <div class="flex justify-between items-center mb-6">
+  <div class=" mb-6 text-right">
     <button
         @click="exportTable"
-        class="btn-success"
+        class="btn-success bg-blue-500 text-white px-2 py-2 rounded"
     >
       导出表格
     </button>
   </div>
-  <div id="tableContainer" class="overflow-x-auto overflow-y-auto max-h-[500px]">
-    <table class="min-w-full bg-white border border-gray-200">
+  <div id="tableContainer" class="overflow-x-auto overflow-y-auto max-h-[500px]" style="zoom:0.5">
+    <table  id="exportTable" class="min-w-full bg-white border border-gray-200">
       <thead>
       <tr>
         <!-- 渲染表头 -->
@@ -26,11 +26,11 @@
       <!-- 渲染数据行 -->
       <tr v-for="(row, rowIndex) in tableData" :key="rowIndex">
         <td
-            v-for="(header, cellIndex) in headers"
+            v-for="(_, cellIndex) in headers"
             :key="cellIndex"
             class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200"
         >
-          {{ row[header] }} <!-- 根据表头提取数据 -->
+          {{ row[cellIndex] }} <!-- 根据表头提取数据 -->
         </td>
       </tr>
       <!-- 如果没有数据，显示提示 -->
@@ -61,17 +61,16 @@ export default {
       type: Array,
       required: true,
     },
+    headers: {
+      type: Object,
+      required: true,
+    },
     exportFileNamePrefix: {
       type: String,
       default: '导出表格', // 默认导出文件名称前缀
     },
   },
   computed: {
-    // 提取表头
-    headers() {
-      if (!this.tableData || this.tableData.length === 0) return [];
-      return Object.keys(this.tableData[0]); // 获取第一个对象的键作为表头
-    },
     // 检查是否有数据
     hasData() {
       return this.tableData && this.tableData.length > 0;
@@ -98,15 +97,14 @@ export default {
         return;
       }
 
-      // 创建表头和数据
-      const headers = this.headers; // 表头
-      const data = this.tableData.map(row => headers.map(header => row[header])); // 数据行
+      // 获取表格元素
+      const table = document.getElementById('exportTable');
 
-      // 将表头和数据合并为一个二维数组
-      const sheetData = [headers, ...data];
+      // 将表格转换为工作表
+      const ws = XLSX.utils.table_to_sheet(table);
 
-      // 创建工作表
-      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+      // 设置列宽
+      this.setColumnWidths(ws, table);
 
       // 创建工作簿并添加工作表
       const wb = XLSX.utils.book_new();
@@ -118,16 +116,27 @@ export default {
       // 导出文件
       XLSX.writeFile(wb, fileName);
     },
-    // 获取单元格的 colspan
-    getColSpan(rowIndex, cellIndex) {
-      if (!this.merges || !this.merges.length) return 1;
+    // 设置列宽
+    setColumnWidths(ws, table) {
+      // 获取表格的列元素
+      const cols = table.querySelectorAll('th, td');
+      const colWidths = {};
 
-      for (const merge of this.merges) {
-        if (merge.s.r === rowIndex && merge.s.c === cellIndex) {
-          return merge.e.c - merge.s.c + 1;
+      // 遍历列元素，计算每列的最大宽度
+      cols.forEach((col) => {
+        const colIndex = col.cellIndex; // 列索引
+        const width = col.offsetWidth; // 列的实际宽度
+
+        // 如果当前列的宽度大于已记录的最大宽度，则更新
+        if (!colWidths[colIndex] || width > colWidths[colIndex]) {
+          colWidths[colIndex] = width;
         }
-      }
-      return 1;
+      });
+
+      // 设置工作表的列宽
+      ws['!cols'] = Object.keys(colWidths).map((colIndex) => ({
+        wch: colWidths[colIndex] / 7, // 将像素宽度转换为 Excel 列宽单位
+      }));
     },
   },
 };

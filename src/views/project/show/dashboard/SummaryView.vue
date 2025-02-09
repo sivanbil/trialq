@@ -1,11 +1,11 @@
 <template>
-  <div class="bg-gray-100 p-6">
-    <div class="mx-auto bg-white shadow-md rounded-lg p-6">
+  <div class="bg-gray-100">
+    <div class="mx-auto bg-white shadow-md rounded-lg">
       <!-- 数据检查 -->
       <div v-if="hasData">
 
         <!-- 表格容器 -->
-        <SummaryTable :tableData="tableData" :merges="merges" :exportFileNamePrefix="reportNumber" />
+        <SummaryTable :tableData="tableData" :merges="merges" :exportFileNamePrefix="reportNumber" :headers="headers" />
       </div>
       <div v-else>
         没有任何数据
@@ -36,14 +36,33 @@ export default {
       merges: [],
       // 抽屉表单相关状态
       isDrawerOpen: false,
+      headers: {},
+      headersMap: [
+        {
+          site: 'SITE',
+          site_name: 'SITE NAME',
+          cra: 'CRA',
+          pages: 'Pages ',
+          pages_entered: 'Pages Entered',
+          missing_pages: 'Missing pages',
+          md_gt7: 'MP＞7days',
+          md_gt14: 'MP>14days',
+          sdv_backlog: 'SDV Backlog',
+          percent_pages_entered: '% Pages Entered',
+          percent_pages_sdved: 'Pages SDVed',
+          answered_query: 'Answered Query',
+          opened_query: 'Open Query',
+          op_gt7: '>7days',
+          op_gt14: '>14days',
+          op_gt21: '＞21days',
+          op_gt30: '≥30days',
+          edc_status_comment: 'EDC Status Comment'
+        }
+      ]
     };
   },
   computed: {
-    // 提取表头
-    headers() {
-      if (!this.tableData || this.tableData.length === 0) return [];
-      return Object.keys(this.tableData[0]); // 获取第一个对象的键作为表头
-    },
+
     // 检查是否有数据
     hasData() {
       return this.tableData && this.tableData.length > 0;
@@ -68,6 +87,7 @@ export default {
         const response = await this.$rustInvoke("fetch_report_detail", {reportNumber: this.reportNumber});
         if (response && response.valid) {
           this.tableData = response.reportData;
+          this.headers = this.headersMap[0];
         } else {
           console.error('No data returned from fetch_report_detail');
         }
