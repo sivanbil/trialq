@@ -5,7 +5,7 @@
       <div v-if="hasData">
 
         <!-- 表格容器 -->
-        <SummaryTable :tableData="tableData" :merges="merges" :exportFileNamePrefix="reportNumber" :headers="headers" />
+        <SummaryTable :tableData="tableData" :merges="merges" :exportFileNamePrefix="reportNumber" :headers="headers" :totalConfig="totalConfig"/>
       </div>
       <div v-else>
         没有任何数据
@@ -37,6 +37,14 @@ export default {
       // 抽屉表单相关状态
       isDrawerOpen: false,
       headers: {},
+      totalConfig: {
+        mergeRange: { start: 0, end: 2 }, // 合并第一列到第三列（索引 0 到 2）
+        columns: [3, 4, 5, 6,7, 8,9,10,11,12,13,14,15,16], // 统计第四列的总和
+        percentageColumns: {
+          9: { numerator: 4, denominator: 3 }, // 第 5 列（索引 4）是百分比列，分子为第 4 列（索引 3），分母为第 6 列（索引 5）
+          10: { numerator: 8, denominator: 3 }, // 第 5 列（索引 4）是百分比列，分子为第 4 列（索引 3），分母为第 6 列（索引 5）
+        }
+      },
       headersMap: [
         {
           site: 'SITE',

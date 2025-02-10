@@ -33,6 +33,23 @@
           {{ row[cellIndex] }} <!-- 根据表头提取数据 -->
         </td>
       </tr>
+
+      <!-- 如果有需要统计的列，显示汇总行 -->
+      <tr v-if="hasData && totalConfig.columns.length > 0" class="bg-blue-500 text-white">
+        <td
+            :colspan="totalConfig.mergeRange.end - totalConfig.mergeRange.start + 1"
+            class="px-6 py-4 whitespace-nowrap text-sm  border border-gray-200 text-center"
+        >
+          Grand Total
+        </td>
+        <td
+            v-for="(header, cellIndex) in Object.entries(headers).slice(totalConfig.mergeRange.end + 1)"
+            :key="cellIndex + totalConfig.mergeRange.end + 1"
+            class="px-6 py-4 whitespace-nowrap text-sm  border border-gray-200"
+        >
+          {{ totalConfig.columns.includes(cellIndex + totalConfig.mergeRange.end + 1) ? totals[cellIndex + totalConfig.mergeRange.end + 1] : '' }}
+        </td>
+      </tr>
       <!-- 如果没有数据，显示提示 -->
       <tr v-if="!hasData">
         <td
@@ -69,12 +86,54 @@ export default {
       type: String,
       default: '导出表格', // 默认导出文件名称前缀
     },
+    totalConfig: {
+      type: Object,
+      default: () => ({
+        mergeRange: { start: 0, end: 0 }, // 合并单元格的范围，索引从 0 开始
+        columns: [], // 需要统计的列索引数组
+        percentageColumns: {} // 百分比列的计算规则，格式: { 列索引: { numerator: 分子列索引, denominator: 分母列索引 } }
+      })
+    }
   },
   computed: {
     // 检查是否有数据
     hasData() {
       return this.tableData && this.tableData.length > 0;
     },
+    // 计算汇总数据
+    totals() {
+      const totals = {};
+      const headerKeys = Object.keys(this.headers);
+      // 先计算普通列的总和
+      this.totalConfig.columns.forEach((colIndex) => {
+        if (!this.totalConfig.percentageColumns[colIndex]) {
+          const key = headerKeys[colIndex];
+          let hasDecimal = false;
+          const sum = this.tableData.reduce((acc, row) => {
+            const value = parseFloat(row[key]);
+            if (!isNaN(value) && Number.isFinite(value)) {
+              if (!Number.isInteger(value)) {
+                hasDecimal = true;
+              }
+              return acc + value;
+            }
+            return acc;
+          }, 0);
+          totals[colIndex] = hasDecimal ? parseFloat(sum.toFixed(1)) : Math.round(sum);
+        }
+      });
+      // 计算百分比列
+      Object.entries(this.totalConfig.percentageColumns).forEach(([colIndexStr, { numerator, denominator }]) => {
+        const colIndex = parseInt(colIndexStr);
+        const numeratorTotal = totals[numerator];
+        const denominatorTotal = totals[denominator];
+        if (numeratorTotal!== undefined && denominatorTotal!== undefined && denominatorTotal!== 0) {
+          const percentage = (numeratorTotal / denominatorTotal) * 100;
+          totals[colIndex] = parseFloat(percentage.toFixed(1));
+        }
+      });
+      return totals;
+    }
   },
   methods: {
     // 生成文件名
@@ -99,20 +158,21 @@ export default {
 
       // 获取表格元素
       const table = document.getElementById('exportTable');
-
       // 将表格转换为工作表
       const ws = XLSX.utils.table_to_sheet(table);
-
+      // 添加合并单元格信息
+      const lastRowIndex = this.tableData.length;
+      const startCol = this.totalConfig.mergeRange.start;
+      const endCol = this.totalConfig.mergeRange.end;
+      ws['!merges'] = ws['!merges'] || [];
+      ws['!merges'].push({ s: { r: lastRowIndex, c: startCol }, e: { r: lastRowIndex, c: endCol } });
       // 设置列宽
       this.setColumnWidths(ws, table);
-
       // 创建工作簿并添加工作表
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-
       // 生成文件名
       const fileName = this.generateFileName();
-
       // 导出文件
       XLSX.writeFile(wb, fileName);
     },
