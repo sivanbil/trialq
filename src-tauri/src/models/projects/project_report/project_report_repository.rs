@@ -117,8 +117,10 @@ impl ProjectReportRepository {
 
         // 如果提供了 keyword，则添加模糊匹配条件
         if let Some(keyword) = project_no {
-            let search_pattern = format!("{}", keyword); // 使用 % 实现模糊匹配
-            query = query.filter(project_number.eq(search_pattern));
+            if !keyword.is_empty() {
+                let search_pattern = format!("{}%", keyword); // 使用 % 实现模糊匹配
+                query = query.filter(project_number.like(search_pattern));
+            }
         }
 
         // 查询总记录数
