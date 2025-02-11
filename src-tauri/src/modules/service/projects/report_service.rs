@@ -164,12 +164,34 @@ impl ProjectReportService {
         self.create_project_report(&project_number, &report_number, &create_time)?;
 
         // 3. 处理每个文件
+        let mut miss_indexes = vec![];
+        let mut miss_index = 0;
+        // 遍历 files，记录缺失的文件索引
         for file_path in files {
-            self.process_file(&file_path, &project_number, &report_number, &create_time)?;
+            if file_path.clone() != "" {
+                // 如果 file_path 是 Some，调用 process_file 处理
+                self.process_file(&file_path, &project_number, &report_number, &create_time)?;
+            } else {
+                // 如果 file_path 是 None，记录缺失的索引
+                miss_indexes.push(miss_index);
+            }
+            miss_index += 1; // 更新索引
         }
 
-        // 4. 构建返回的 JSON 数据
-        let source_files = vec!["query_detail".to_string(), "data_clean_progress".to_string(), "missing_pages".to_string()]; // 示例数据
+        // 示例的 source_files
+        let mut source_files = vec![
+            "query_detail".to_string(),
+            "data_clean_progress".to_string(),
+            "missing_pages".to_string(),
+        ];
+
+        // 根据缺失的索引移除 source_files 中的对应元素
+        for &index in miss_indexes.iter().rev() {
+            if index < source_files.len() {
+                source_files.remove(index);
+            }
+        }
+
         Ok(self.build_response(&report_number, &create_time, source_files))
 
     }
@@ -544,8 +566,7 @@ impl ProjectReportService {
                             obj.insert("md_gt14".to_string(), serde_json::Value::Number(((days > 14) as u8).into()));
                         }
                         value
-                    }
-                    )
+                    })
                     .collect()
             }
             _ => return Err("Unknown file type".to_string()),

@@ -184,9 +184,8 @@ export default {
           console.error('删除项目失败:', response.message);
           this.$message.error('删除失败：' + response.message);
         }
-      } catch (error) {
-        console.error('调用删除项目接口失败:', error);
-        this.$message.error('删除失败，请重试！');
+      } catch {
+        console.info('调用删除项目接口失败:');
       }
     },
     openDrawer() {

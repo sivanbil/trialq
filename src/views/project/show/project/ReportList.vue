@@ -190,7 +190,7 @@ export default {
     async fetchData() {
       try {
         const response = await this.$rustInvoke('fetch_report_list', {
-          projectNumber: this.projectNumber,
+          keyword: this.projectNumber,
           currentPage: this.currentPage,
           pageSize: this.pageSize,
         });
@@ -266,9 +266,9 @@ export default {
         if (response.valid) {
           this.sourceFileName = sourceFileName;
           this.sourceFileDetail = response.data;
-          if (this.sourceFileName.indexOf("missing") > -1) {
+          if (this.sourceFileName.toLocaleLowerCase().indexOf("missing") > -1) {
             this.sourceFileHeaders = this.sourceFileHeadersMap[0];
-          } else if (this.sourceFileName.indexOf("query") > -1) {
+          } else if (this.sourceFileName.toLocaleLowerCase().indexOf("query") > -1) {
             this.sourceFileHeaders = this.sourceFileHeadersMap[1];
           } else {
             this.sourceFileHeaders = this.sourceFileHeadersMap[2];

@@ -260,8 +260,7 @@ export default {
     areFilesSelected() {
       return (
           this.selectedFiles.queryDetail &&
-          this.selectedFiles.dataCleanProgress &&
-          this.selectedFiles.missingPage
+          this.selectedFiles.dataCleanProgress
       );
     },
   },
@@ -388,7 +387,7 @@ export default {
           files: [
             this.selectedFiles.queryDetail,
             this.selectedFiles.dataCleanProgress,
-            this.selectedFiles.missingPage,
+            this.selectedFiles.missingPage == null ? '' : this.selectedFiles.missingPage,
           ],
         });
 
@@ -417,8 +416,8 @@ export default {
       try {
         // 调用数据分析接口
         const result = await this.$rustInvoke("analyze_report_data", {
-          projectNo: this.project,
-          reportNo: this.reportNo
+          projectNumber: this.project,
+          reportNumber: this.reportNo
         });
 
         if (result.valid) {

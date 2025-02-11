@@ -153,8 +153,6 @@
       <!-- 批量导入抽屉 -->
       <div v-if="isImportDrawerOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="z-index: 100;">
         <div class="bg-white p-6 rounded-lg shadow-md w-11/12 max-w-md">
-
-
           <!-- 抽屉标题 -->
           <h3 class="text-lg font-semibold mb-4">批量导入</h3>
           <!-- 关闭按钮 -->
@@ -170,12 +168,13 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700">选择文件</label>
-              <input
-                  type="file"
-                  @change="handleFileSelect"
+              <button
+                  @click="openFilePicker"
                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  accept=".xlsx, .xls"
-              />
+              >
+                选择文件
+              </button>
+              <p v-if="filePath" class="mt-2 text-sm text-gray-500">已选择文件: {{ filePath }}</p>
             </div>
           </div>
 
@@ -190,8 +189,6 @@
           </div>
         </div>
       </div>
-
-
     </div>
   </div>
 </template>
@@ -202,7 +199,7 @@ import Pagination from "@/components/PaginationView.vue"; // 导入 Tauri 的 di
 
 export default {
   name: 'SiteManage',
-  components: {Pagination},
+  components: { Pagination },
   props: {
     projectNumber: {
       type: String,
@@ -341,7 +338,7 @@ export default {
       try {
         const selected = await open({
           multiple: false,
-          filters: [{ name: 'Excel Files', extensions: ['xlsx', 'xls'] }],
+          filters: [{name: 'Excel Files', extensions: ['xlsx', 'xls']}],
         });
         if (selected) {
           this.filePath = selected; // 保存文件路径
