@@ -6,12 +6,14 @@ use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::sqlite::{Sqlite, SqliteConnection};
 use std::sync::Arc;
 use std::time::SystemTime;
-use chrono::{NaiveDate, NaiveDateTime, Utc};
-use date_formatter::utils::format_date;
+use chrono::{Local, NaiveDate, NaiveDateTime, Utc};
+use date_formatter::utils::{format_date, format_timestamp, DateFormat};
 use diesel::serialize::ToSql;
 use diesel::sql_types::Text;
+use log::info;
 use regitry_code::generate_task_number;
 use serde::Serialize;
+use serde_json::Value;
 use crate::models::projects::{project_report::{
     project_report_model::{ProjectReport, NewProjectReport},
     project_report_repository::ProjectReportRepository,
@@ -35,7 +37,7 @@ use crate::models::projects::{project_report::{
 
 use crate::modules::service::projects::site_service::SiteService;
 use crate::models::projects::project_report::project_report_data_model::ProjectReportData;
-
+use crate::utils::excel_date_to_naive_date;
 
 #[derive(Serialize)]
 pub struct OriginExcelDataResponse {
@@ -157,7 +159,7 @@ impl ProjectReportService {
 
     pub fn async_process_excel_files(&self, files: Vec<String>, project_number: String) -> Result<Response, String> {
         // 1. 生成报告编号和创建时间
-        let create_time = format_date(SystemTime::now(), "%Y-%m-%d");
+        let create_time = format_timestamp((Local::now().timestamp()) as u64, DateFormat::DateTime);
         let report_number = format!("{}", generate_task_number());
 
         // 2. 创建项目报告
@@ -184,6 +186,8 @@ impl ProjectReportService {
             "data_clean_progress".to_string(),
             "missing_pages".to_string(),
         ];
+
+        info!("报告处理完成");
 
         // 根据缺失的索引移除 source_files 中的对应元素
         for &index in miss_indexes.iter().rev() {
@@ -244,12 +248,16 @@ impl ProjectReportService {
 
     /// 处理文件解析结果
     fn process_results(&self, results: Vec<ValidationResult>, file_name: &str, report_number: &str, create_time: &str) {
-        for result in results {
-            let json_value = serde_json::to_value(&result.data).unwrap();
+        // 将 results 按每 200 个一批进行拆分
+        for batch in results.chunks(200) {
+            let batch_results: Vec<ValidationResult> = batch.to_vec();
+            let json_values: Vec<serde_json::Value> = batch_results.into_iter().map(|result| {
+                serde_json::to_value(&result.data).unwrap()
+            }).collect();
             match file_name.to_lowercase().as_str() {
-                s if s.contains("clean") => self.process_clean_data(json_value, report_number, create_time),
-                s if s.contains("query") => self.process_query_detail(json_value, report_number, create_time),
-                s if s.contains("missing") => self.process_missing_page(json_value, report_number, create_time),
+                s if s.contains("clean") => self.batch_process_clean_data(json_values, report_number, create_time),
+                s if s.contains("query") => self.batch_process_query_detail(json_values, report_number, create_time),
+                s if s.contains("missing") => self.batch_process_missing_page(json_values, report_number, create_time),
                 _ => println!("未知文件类型: {}", file_name),
             }
         }
@@ -285,6 +293,52 @@ impl ProjectReportService {
             self.missing_page_repository.create_missing_page(data).unwrap();
         } else {
             println!("解析缺失页面失败");
+        }
+    }
+
+    fn batch_process_clean_data(&self, json_values: Vec<Value>, report_number: &str, create_time: &str) {
+        let mut valid_data = Vec::new();
+        for json_value in json_values {
+            if let Ok(mut data) = serde_json::from_value::<NewProjectDataCleanProgress>(json_value) {
+                data.report_number = report_number.to_string();
+                data.create_time = create_time.to_string();
+                valid_data.push(data);
+            } else {
+                println!("解析清理数据失败");
+            }
+        }
+        if!valid_data.is_empty() {
+            self.clean_data_repository.batch_create_data_clean_progress(valid_data).unwrap();
+        }
+    }
+    fn batch_process_query_detail(&self, json_values: Vec<Value>, report_number: &str, create_time: &str) {
+        let mut valid_data = Vec::new();
+        for json_value in json_values {
+            if let Ok(mut data) = serde_json::from_value::<NewProjectQueryDetail>(json_value) {
+                data.report_number = report_number.to_string();
+                data.create_time = create_time.to_string();
+                valid_data.push(data);
+            } else {
+                println!("解析查询详情失败");
+            }
+        }
+        if!valid_data.is_empty() {
+            self.query_detail_repository.batch_create_query_detail(valid_data).unwrap();
+        }
+    }
+    fn batch_process_missing_page(&self, json_values: Vec<Value>, report_number: &str, create_time: &str) {
+        let mut valid_data = Vec::new();
+        for json_value in json_values {
+            if let Ok(mut data) = serde_json::from_value::<NewProjectMissingPage>(json_value) {
+                data.report_number = report_number.to_string();
+                data.create_time = create_time.to_string();
+                valid_data.push(data);
+            } else {
+                println!("解析缺失页面失败");
+            }
+        }
+        if!valid_data.is_empty() {
+            self.missing_page_repository.batch_create_missing_page(valid_data).unwrap();
         }
     }
 
@@ -338,7 +392,6 @@ impl ProjectReportService {
                     .find_by_report_number(&report.report_number)
                     .unwrap_or_default(); // 如果查询失败，返回空列表
 
-                println!("{:?}", source_files_list);
                 let source_files = source_files_list.into_iter()
                     .map(|source_file| source_file.source_file_name.to_string())
                     .collect::<Vec<String>>();
@@ -406,7 +459,6 @@ impl ProjectReportService {
     pub fn summary_every_site_data(&self, report_number:&str, sites: Vec<ProjectSite>) {
         sites.iter().for_each(|site| {
             let site_number = site.site_number.clone();
-            let project_number = site.project_name.clone();
             let vec_result = self.missing_page_repository.find_missing_page_stats(report_number, &(site_number.clone()));
 
             let mut missing_pages = 0;
@@ -446,6 +498,7 @@ impl ProjectReportService {
             // 查询查询详情统计数据
             let query_stats = self.query_detail_repository
                 .get_query_statistics(report_number, &site_number).unwrap();
+
             let answered_query = query_stats.answered_query_count;
             let opened_query = query_stats.opened_query_count;
             let op_gt7 = query_stats.query_age_distribution.between_7_and_14_days + query_stats.query_age_distribution.more_than_30_days;
@@ -532,10 +585,21 @@ impl ProjectReportService {
                 self.query_detail_repository
                     .find_query_details_by_report_number(report_number)?
                     .into_iter()
-                    .map(|d|  {
+                    .map(|mut d|  {
+                        let date = excel_date_to_naive_date((&d.qry_open_date_localized).parse().unwrap());
+                        let formatted = date.format_with_items(chrono::format::strftime::StrftimeItems::new("%d-%B-%y"));
+                        d.qry_open_date_localized = formatted.to_string();
                         let mut value = serde_json::to_value(&d).unwrap();
-                        if let Ok(date) = NaiveDate::parse_from_str(&d.qry_open_date_localized, "%Y/%m/%d") {
-                            let days = Utc::now().date_naive().signed_duration_since(date).num_days();
+
+                        if let Some(pos) = d.qry_open_date.find(' ') {
+                            let output = &d.qry_open_date[0..pos];
+                            // 解析日期字符串，并将结果绑定到一个新的变量名
+                            let parsed_qry_open_date = NaiveDate::parse_from_str(output, "%m/%d/%Y").unwrap();
+
+                            let current_date = Local::now().naive_local().date();
+                            // 计算日期差值
+                            println!("current_date:{}, parsed_qry_open_date: {:?}", current_date, parsed_qry_open_date);
+                            let days = (current_date - parsed_qry_open_date).num_days();
                             if let serde_json::Value::Object(ref mut obj) = value {
                                 obj.insert("op_gt7".to_string(), serde_json::Value::Number(((days > 7) as u8).into()));
                                 obj.insert("op_gt14".to_string(), serde_json::Value::Number(((days > 14) as u8).into()));
@@ -607,8 +671,6 @@ impl ProjectReportService {
                     None, // site_name
                     None, // site_cra
                 )?;
-            } else {
-                println!("站点已存在: {}", site_number);
             }
         }
 

@@ -41,7 +41,7 @@
                 @click="analyzeData(item)"
                 class="px-3 py-1 text-sm font-medium text-white bg-orange-500 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
-              汇总数据
+              开始分析
             </button>
           </td>
         </tr>
@@ -249,6 +249,7 @@ export default {
         if (result.valid) {
           item.state = result.state;
           this.$showModal('数据分析完成！');
+          await this.fetchData();
         } else {
           this.$showModal('数据分析失败，请重试！');
         }

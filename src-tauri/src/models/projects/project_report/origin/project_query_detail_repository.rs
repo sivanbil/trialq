@@ -3,8 +3,8 @@ use crate::models::projects::project_report::origin::project_query_detail_model:
 use crate::models::projects::project_report::origin::schema::project_query_detail::dsl::*;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
-use crate::models::projects::project_report::origin::project_data_clean_progress_repository::ProjectDataCleanProgressRepository;
-
+use crate::utils::parse_date;
+use date_formatter::utils::DateFormat;
 
 #[derive(Debug)]
 pub struct QueryStatistics {
@@ -23,6 +23,7 @@ pub struct QueryAgeDistribution {
 }
 
 use chrono::{NaiveDate, Local};
+use log::{error, info};
 
 pub struct ProjectQueryDetailRepository {
     pool: Pool<ConnectionManager<SqliteConnection>>, // 使用 SqliteConnection
@@ -35,6 +36,19 @@ impl ProjectQueryDetailRepository {
 
     // 创建查询详情
     pub fn create_query_detail(&self, new_query_detail: NewProjectQueryDetail) -> Result<ProjectQueryDetail, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+        diesel::insert_into(project_query_detail)
+            .values(&new_query_detail)
+            .execute(&mut conn)
+            .map_err(|e| e.to_string())?;
+        project_query_detail
+            .order(id.desc())
+            .first(&mut conn)
+            .map_err(|e| e.to_string())
+    }
+
+    // 创建查询详情
+    pub fn batch_create_query_detail(&self, new_query_detail: Vec<NewProjectQueryDetail>) -> Result<ProjectQueryDetail, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
         diesel::insert_into(project_query_detail)
             .values(&new_query_detail)
@@ -96,18 +110,11 @@ impl ProjectQueryDetailRepository {
     // 获取查询统计信息
     pub fn get_query_statistics(&self, report_number_str: &str, site_number: &str) -> Result<QueryStatistics, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+
         // 获取 Answered Query 的数量
         let answered_query_count: i64 = project_query_detail
             .filter(qry_status.eq("Answered"))
             .filter(report_number.eq(report_number_str))
-            .filter(study_environment_site.eq(site_number))
-            .count()
-            .get_result(&mut conn)
-            .map_err(|e| e.to_string())?;
-        // 获取 Opened Query 的数量
-        let opened_query_count: i64 = project_query_detail
-            .filter(qry_status.eq("Open"))
-            .filter(report_number.eq(report_number))
             .filter(study_environment_site.eq(site_number))
             .count()
             .get_result(&mut conn)
@@ -120,7 +127,9 @@ impl ProjectQueryDetailRepository {
             .select(qry_open_date)
             .load(&mut conn)
             .map_err(|e| e.to_string())?;
-        // 计算 Query 的年龄分布
+
+        let opened_query_count: i64 = open_queries.len() as i64;
+        // 计算 Query 的日期分布
         let mut less_than_7_days = 0;
         let mut between_7_and_14_days = 0;
         let mut between_14_and_21_days = 0;
@@ -128,20 +137,25 @@ impl ProjectQueryDetailRepository {
         let mut more_than_30_days = 0;
         let current_date = Local::now().naive_local().date();
         for qry_open_date_str in open_queries {
-            // 解析日期字符串，并将结果绑定到一个新的变量名
-            let parsed_qry_open_date = NaiveDate::parse_from_str(&qry_open_date_str, "%Y/%m/%d")
-                .map_err(|e| format!("Failed to parse date: {}", e))?;
-            // 计算日期差值
-            println!("current_date:{}, parsed_qry_open_date: {:?}", current_date, parsed_qry_open_date);
-            let days_open = (current_date - parsed_qry_open_date).num_days();
-            // 根据差值分类
-            match days_open {
-                0..=6 => less_than_7_days += 1,
-                7..=13 => between_7_and_14_days += 1,
-                14..=20 => between_14_and_21_days += 1,
-                21..=30 => between_21_and_30_days += 1,
-                _ => more_than_30_days += 1,
+            if let Some(pos) = qry_open_date_str.find(' ') {
+                let output = &qry_open_date_str[0..pos];
+                // 解析日期字符串，并将结果绑定到一个新的变量名
+                let parsed_qry_open_date = NaiveDate::parse_from_str(output, "%m/%d/%Y")
+                    .map_err(|e| format!("Failed to parse date: {}", e))?;
+
+                // 计算日期差值
+                println!("current_date:{}, parsed_qry_open_date: {:?}", current_date, parsed_qry_open_date);
+                let days_open = (current_date - parsed_qry_open_date).num_days();
+                // 根据差值分类
+                match days_open {
+                    0..=6 => less_than_7_days += 1,
+                    7..=13 => between_7_and_14_days += 1,
+                    14..=20 => between_14_and_21_days += 1,
+                    21..=30 => between_21_and_30_days += 1,
+                    _ => more_than_30_days += 1,
+                }
             }
+
         }
         // 返回结果
         Ok(QueryStatistics {

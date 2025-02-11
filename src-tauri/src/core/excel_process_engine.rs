@@ -3,6 +3,7 @@ use csv::ReaderBuilder;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::{Path, PathBuf};
+use log::{debug, info};
 use mlua::Lua;
 use serde::{Serialize, Deserialize};
 use crate::CONFIG_DIR;
@@ -29,7 +30,7 @@ pub struct CustomValidationRule {
 }
 
 // 定义验证结果的结构体
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct ValidationResult {
     pub data: HashMap<String, String>, // 解析的数据
     is_valid: bool,               // 是否通过验证
@@ -109,6 +110,7 @@ impl FileProcessor {
                     }
                 }
             }
+            debug!("row_data:{:#?}", &row_data);
 
             results.push(ValidationResult {
                 data: row_data,
@@ -138,7 +140,6 @@ impl FileProcessor {
 
         // 获取数据行
         let rows: Vec<Vec<String>> = range.rows().skip(1).map(|row| row.iter().map(|cell| cell.to_string()).collect()).collect();
-
         // 调用通用解析函数
         Self::parse_data_with_rules(headers, rows, rules, validation_rules)
     }
@@ -240,14 +241,16 @@ impl FileProcessor {
         let validation_rules = Self::read_validation_rules(validation_path.to_str().unwrap()).map_err(|e| {
             format!("读取验证规则文件时出错: {}", e)
         })?;
+        info!("====>开始读取文件:{}", file_name);
         let results = match file_path.extension().and_then(|s| s.to_str()) {
             Some("csv") => Self::parse_csv_with_rules(file_path.to_str().unwrap(), &rules, &validation_rules)?,
             Some("xlsx") | Some("xls") => Self::parse_excel_with_rules(file_path.to_str().unwrap(), &rules, &validation_rules)?,
             _ => return Err("不支持的文件格式".into()),
         };
 
+        info!("====>读取文件完成");
         callback(results, file_name);
-
+        info!("====>数据处理完成");
 
         Ok(())
     }

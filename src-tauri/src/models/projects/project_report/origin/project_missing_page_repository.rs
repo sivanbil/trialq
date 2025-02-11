@@ -29,6 +29,18 @@ impl ProjectMissingPageRepository {
             .map_err(|e| e.to_string())
     }
 
+    pub fn batch_create_missing_page(&self, new_missing_page_list: Vec<NewProjectMissingPage>) -> Result<ProjectMissingPage, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+        diesel::insert_into(project_missing_page)
+            .values(&new_missing_page_list)
+            .execute(&mut conn)
+            .map_err(|e| e.to_string())?;
+        project_missing_page
+            .order(id.desc())
+            .first(&mut conn)
+            .map_err(|e| e.to_string())
+    }
+
     // 根据报告编号查询缺失页面记录
     pub fn  find_missing_pages_by_report_number(&self, report_no: &str) -> Result<Vec<ProjectMissingPage>, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;

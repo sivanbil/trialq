@@ -40,6 +40,19 @@ impl ProjectDataCleanProgressRepository {
             .map_err(|e| e.to_string())
     }
 
+    // 创建数据清理进度
+    pub fn batch_create_data_clean_progress(&self, new_data_clean_progress_list: Vec<NewProjectDataCleanProgress>) -> Result<ProjectDataCleanProgress, String> {
+        let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+        diesel::insert_into(project_data_clean_progress)
+            .values(&new_data_clean_progress_list)
+            .execute(&mut conn)
+            .map_err(|e| e.to_string())?;
+        project_data_clean_progress
+            .order(id.desc())
+            .first(&mut conn)
+            .map_err(|e| e.to_string())
+    }
+
     // 根据报告编号查询数据清理进度
     pub fn find_data_clean_progress_by_report_number(&self, report_no: &str) -> Result<Vec<ProjectDataCleanProgress>, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;

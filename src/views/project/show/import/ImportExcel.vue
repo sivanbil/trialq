@@ -14,6 +14,7 @@
     <ReportList
         :projectNumber="projectNumber"
         :pageSize="10"
+        :key="reportListKey"
     />
 
     <!-- 抽屉表单 -->
@@ -39,7 +40,15 @@ export default {
     return {
       projectNumber: '', // 当前项目号
       isDrawerOpen: false, // 控制抽屉的显示
+      reportListKey: 0
     };
+  },
+  watch: {
+    isDrawerOpen(newValue, oldValue) {
+      if (oldValue === true && newValue === false) {
+        this.reportListKey++;
+      }
+    }
   },
   methods: {
     // 打开抽屉

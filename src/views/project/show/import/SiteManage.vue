@@ -1,19 +1,29 @@
 <template>
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="z-index: 100">
     <div class="bg-white p-6 rounded-lg shadow-md w-11/12 max-h-[90vh] flex flex-col">
-      <!-- 关闭按钮 -->
-      <button
-          @click="closeDialog"
-          class="absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700 focus:outline-none"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+
 
       <!-- 标题 -->
-      <h2 class="text-lg font-semibold mb-4">项目中心</h2>
-
+        <!-- 标题 -->
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-semibold">项目中心</h3>
+          <button @click="closeDialog" class="text-gray-500 hover:text-gray-700">
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-8 w-8"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+            >
+              <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
       <!-- 按钮容器 -->
       <div class="flex justify-end mb-4 space-x-4">
         <!-- 批量导入按钮 -->
@@ -242,6 +252,11 @@ export default {
           pageSize: this.pageSize,
         });
         if (response.valid) {
+          if (response.sites.length === 0 && this.currentPage > 1) {
+            this.currentPage--;
+            await this.fetchCenterData();
+            return;
+          }
           this.centers = response.sites;
           this.totalPages = Math.ceil(response.total / this.pageSize);
         } else {

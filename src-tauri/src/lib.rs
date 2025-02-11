@@ -11,6 +11,7 @@ pub mod core;
 
 // 导入需要包漏出去的函数所在包
 pub mod modules;
+pub mod utils;
 
 use core::{
     connections::db::init_pool
@@ -69,7 +70,7 @@ lazy_static! {
     };
 }
 
-
+use self::core::log::init_logging;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     dotenv::dotenv().ok();

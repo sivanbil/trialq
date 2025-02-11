@@ -175,14 +175,9 @@
       <div v-if="currentStep === 4">
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2"
-          >数据分析结果</label
+          >接下来可以进行数据分析</label
           >
-          <div class="mt-1">
-            <p v-if="analysisResult" class="text-sm text-gray-500">
-              {{ analysisResult }}
-            </p>
-            <p v-else class="text-sm text-gray-500">请点击“开始分析”按钮</p>
-          </div>
+
         </div>
       </div>
 

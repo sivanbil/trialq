@@ -35,6 +35,9 @@ create table project_site (
     site_name TEXT NOT NULL,
     site_cra TEXT NOT NULL
 );
+-- 创建一个名为 idx_project_name 的索引，该索引基于 project_site 表的 project_name 字段
+CREATE INDEX idx_project_name ON project_site (project_name);
+
 create table project_report (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_number TEXT NOT NULL,
@@ -43,6 +46,12 @@ create table project_report (
     create_time TEXT NOT NULL,
     update_time TEXT NOT NULL
 );
+
+-- 为 project_number 字段创建索引
+CREATE INDEX idx_project_number ON project_report (project_number);
+
+-- 为 report_number 字段创建索引
+CREATE INDEX idx_report_number_1 ON project_report (report_number);
 
 create table user_task (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -64,11 +73,12 @@ create table project_report_source (
     create_time TEXT NOT NULL,
     update_time TEXT NOT NULL
 );
+CREATE INDEX idx_report_number_2 ON project_report_source (report_number);
 
 -- 报告汇总表
 create table project_report_data (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    site TEXT NOT NULL UNIQUE,
+    site TEXT NOT NULL,
     site_name TEXT NOT NULL,
     cra TEXT NOT NULL,
     pages INTEGER NOT NULL,
@@ -82,12 +92,13 @@ create table project_report_data (
     percent_pages_sdved TEXT NOT NULL,
     answered_query INTEGER NOT NULL,
     opened_query INTEGER NOT NULL,
-    oq_gt7 INTEGER NOT NULL,
-    oq_gt14 INTEGER NOT NULL,
+    op_gt7 INTEGER NOT NULL,
+    op_gt14 INTEGER NOT NULL,
     op_gt21 INTEGER NOT NULL,
     op_gt30 INTEGER NOT NULL,
     report_number TEXT NOT NULL
 );
+CREATE INDEX idx_report_number_3 ON project_report_data (report_number);
 
 -- 项目missing_page数据
 CREATE TABLE project_missing_page (
@@ -103,6 +114,7 @@ CREATE TABLE project_missing_page (
     update_time TEXT,
     report_number TEXT NOT NULL
 );
+CREATE INDEX idx_report_number_4 ON project_missing_page (report_number);
 
 -- 项目query_detail数据--对应源数据
 CREATE TABLE project_query_detail (
@@ -128,6 +140,7 @@ CREATE TABLE project_query_detail (
     update_time TEXT,
     report_number TEXT NOT NULL
 );
+CREATE INDEX idx_report_number_5 ON project_query_detail (report_number);
 
 -- 项目的数据清理进度
 CREATE TABLE project_data_clean_progress (
@@ -144,4 +157,5 @@ CREATE TABLE project_data_clean_progress (
     report_number TEXT NOT NULL
 );
 
+CREATE INDEX idx_report_number_6 ON project_data_clean_progress (report_number);
 
