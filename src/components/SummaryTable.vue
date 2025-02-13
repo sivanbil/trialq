@@ -125,7 +125,17 @@ export default {
       // 计算百分比列
       Object.entries(this.totalConfig.percentageColumns).forEach(([colIndexStr, { numerator, denominator }]) => {
         const colIndex = parseInt(colIndexStr);
-        const numeratorTotal = totals[numerator];
+        let numeratorTotal;
+        if (typeof numerator === 'number') {
+          numeratorTotal = totals[numerator];
+        } else if (numerator && numerator.subtract) {
+          const [column1, column2] = numerator.subtract;
+          const total1 = totals[column1];
+          const total2 = totals[column2];
+          if (total1!== undefined && total2!== undefined) {
+            numeratorTotal = total1 - total2;
+          }
+        }
         const denominatorTotal = totals[denominator];
         if (numeratorTotal!== undefined && denominatorTotal!== undefined && denominatorTotal!== 0) {
           const percentage = (numeratorTotal / denominatorTotal) * 100;

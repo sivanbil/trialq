@@ -490,7 +490,7 @@ impl ProjectReportService {
             };
 
             let percent_pages_sdved = if pages > 0 {
-                format!("{:.2}", (sdv_backlog as f64 / pages as f64) * 100.0)
+                format!("{:.2}", ((pages_entered - sdv_backlog) as f64 / pages_entered as f64) * 100.0)
             } else {
                 "0.0".to_string()
             };

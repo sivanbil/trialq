@@ -42,7 +42,7 @@ export default {
         columns: [3, 4, 5, 6,7, 8,9,10,11,12,13,14,15,16], // 统计第四列的总和
         percentageColumns: {
           9: { numerator: 4, denominator: 3 }, // 第 5 列（索引 4）是百分比列，分子为第 4 列（索引 3），分母为第 6 列（索引 5）
-          10: { numerator: 8, denominator: 3 }, // 第 5 列（索引 4）是百分比列，分子为第 4 列（索引 3），分母为第 6 列（索引 5）
+          10: { numerator: { subtract: [4, 8] }, denominator: 4 }, // 第 5 列（索引 4）是百分比列，分子为第 4 列（索引 3），分母为第 6 列（索引 5）
         }
       },
       headersMap: [
