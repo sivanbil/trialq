@@ -1,11 +1,9 @@
-use crate::AppState;
-use tauri::State;
 use crate::modules::service::projects::report_service::SummaryResponse;
 use crate::modules::service::tools::tool_service::{
-    ToolListResponse,
-    SaveToolResponse,
-    DeleteToolResponse
+    DeleteToolResponse, SaveToolResponse, ToolListResponse,
 };
+use crate::AppState;
+use tauri::State;
 #[tauri::command]
 pub async fn fetch_tool_list(
     state: State<'_, AppState>, // 从状态中获取 AppState
@@ -17,7 +15,6 @@ pub async fn fetch_tool_list(
 
     // 查询分页数据
     tools_service.fetch_tool_list(current_page, page_size)
-
 }
 
 #[tauri::command]
@@ -32,8 +29,6 @@ pub async fn save_tool(
     // 保存工具
     tools_service.save_tool(title, link_url)
 }
-
-
 
 #[tauri::command]
 pub async fn delete_tool(

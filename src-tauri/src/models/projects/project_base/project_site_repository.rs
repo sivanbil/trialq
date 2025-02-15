@@ -1,9 +1,9 @@
-use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
-use crate::models::projects::project_base::project_site_model::{ProjectSite, NewProjectSite};
+use crate::models::projects::project_base::project_site_model::{NewProjectSite, ProjectSite};
 use crate::models::projects::project_base::schema::project_site::dsl::*;
 use crate::models::projects::Pagination;
 use diesel::debug_query;
+use diesel::prelude::*;
+use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::sqlite::Sqlite;
 
 pub struct ProjectSiteRepository {
@@ -32,7 +32,11 @@ impl ProjectSiteRepository {
     }
 
     // 分页查询项目站点（支持 keyword 检索）
-    pub fn read_sites(&self, project_no: String,pagination: Pagination) -> Result<Vec<ProjectSite>, String> {
+    pub fn read_sites(
+        &self,
+        project_no: String,
+        pagination: Pagination,
+    ) -> Result<Vec<ProjectSite>, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
 
         // 计算 offset
@@ -47,8 +51,6 @@ impl ProjectSiteRepository {
             query = query.filter(site_number.like(search_pattern));
         }
 
-        println!("{}", debug_query::<Sqlite, _>(&query));
-
         // 执行分页查询
         let result = query
             //.select((id, project_name, site_number, site_name, site_cra)) // 显式指定字段顺序
@@ -62,7 +64,7 @@ impl ProjectSiteRepository {
     }
 
     // 查询项目站点总数（支持 keyword 检索）
-    pub fn count_sites(&self,project_no: String, keyword: Option<String>) -> Result<i64, String> {
+    pub fn count_sites(&self, project_no: String, keyword: Option<String>) -> Result<i64, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
 
         // 构建查询
@@ -123,7 +125,11 @@ impl ProjectSiteRepository {
     }
 
     // 根据 ID 更新项目站点信息
-    pub fn update_by_id(&self, site_id: i32, updated_site: NewProjectSite) -> Result<ProjectSite, String> {
+    pub fn update_by_id(
+        &self,
+        site_id: i32,
+        updated_site: NewProjectSite,
+    ) -> Result<ProjectSite, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
 
         // 更新指定 ID 的记录

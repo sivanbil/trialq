@@ -1,6 +1,6 @@
-use diesel::QueryableByName;
 use diesel::prelude::*;
 use diesel::sql_types::*;
+use diesel::QueryableByName;
 
 #[derive(QueryableByName, Debug)]
 pub struct MissingPageStats {

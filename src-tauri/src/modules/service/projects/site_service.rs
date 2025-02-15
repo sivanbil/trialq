@@ -1,10 +1,10 @@
+use crate::core::excel_process_engine::{FileProcessor, ValidationResult};
 use crate::models::projects::project_base::project_site_model::{NewProjectSite, ProjectSite};
 use crate::models::projects::project_base::project_site_repository::ProjectSiteRepository;
+use crate::models::projects::Pagination;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::SqliteConnection;
 use serde::Serialize;
-use crate::core::excel_process_engine::{FileProcessor, ValidationResult};
-use crate::models::projects::Pagination;
 
 #[derive(Serialize)]
 pub struct DeleteSiteResponse {
@@ -18,14 +18,13 @@ pub struct ImportSiteResponse {
     message: String, // 返回的消息
 }
 
-
 #[derive(Serialize)]
 pub struct SiteListResponse {
     valid: bool,
     pub(crate) sites: Vec<ProjectSite>, // 站点列表
     pub(crate) total: i64,              // 总记录数
-    current_page: i64,       // 当前页码
-    page_size: i64,          // 每页大小
+    current_page: i64,                  // 当前页码
+    page_size: i64,                     // 每页大小
 }
 
 #[derive(Serialize)]
@@ -202,7 +201,11 @@ impl SiteService {
     }
 
     // 根据 ID 更新项目站点信息
-    pub fn update_site_by_id(&self, site_id: i32, updated_site: NewProjectSite) -> Result<SaveSiteResponse, String> {
+    pub fn update_site_by_id(
+        &self,
+        site_id: i32,
+        updated_site: NewProjectSite,
+    ) -> Result<SaveSiteResponse, String> {
         // 调用仓库层的 update_by_id 方法
         let result = self.repository.update_by_id(site_id, updated_site);
 
@@ -218,7 +221,7 @@ impl SiteService {
             // 更新失败，返回错误信息
             Err(e) => {
                 Ok(SaveSiteResponse {
-                    valid: false, // 操作失败
+                    valid: false,                        // 操作失败
                     message: format!("更新失败: {}", e), // 返回具体的错误信息
                     site: None,
                 })
@@ -226,7 +229,11 @@ impl SiteService {
         }
     }
 
-    pub fn async_process_excel_files(&self, file_path: String, project_name: String) -> Result<ImportSiteResponse, String> {
+    pub fn async_process_excel_files(
+        &self,
+        file_path: String,
+        project_name: String,
+    ) -> Result<ImportSiteResponse, String> {
         // 处理文件内容
         let callback = |results: Vec<ValidationResult>, file_name: &str| {
             for result in results {
@@ -244,14 +251,14 @@ impl SiteService {
                         Ok(site) => {
                             println!("site:{:?}", site);
                         }
-                        _ => {
-
-                        }
+                        _ => {}
                     }
                 }
             }
         };
-        FileProcessor::process_file(file_path, callback).map_err(|e| e.to_string()).expect("TODO: panic message");
+        FileProcessor::process_file(file_path, callback)
+            .map_err(|e| e.to_string())
+            .expect("TODO: panic message");
 
         Ok(ImportSiteResponse {
             valid: true,

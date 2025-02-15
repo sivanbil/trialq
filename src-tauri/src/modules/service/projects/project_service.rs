@@ -1,19 +1,18 @@
 use std::time::SystemTime;
 // project_service.rs
 use crate::models::projects::project_base::project_model::{NewProject, Project};
-use crate::models::projects::project_base::project_repository::{ ProjectRepository};
-use date_formatter::utils::{format_date};
+use crate::models::projects::project_base::project_repository::ProjectRepository;
+use crate::models::projects::Pagination;
+use date_formatter::utils::format_date;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::SqliteConnection;
-use serde::{ Serialize};
-use crate::models::projects::Pagination;
+use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct DeleteProjectResponse {
     valid: bool,
     message: String, // 返回的消息
 }
-
 
 #[derive(Serialize)]
 pub struct ProjectListResponse {
@@ -37,7 +36,6 @@ pub struct SupportedTemplateResponse {
     pub(crate) templates: Vec<String>,
 }
 
-
 #[derive(Serialize)]
 pub struct ResponseData {
     #[serde(rename = "projectName")] // 转换为驼峰命名
@@ -49,7 +47,6 @@ pub struct ResponseData {
     #[serde(rename = "stateName")]
     state_name: String,
 }
-
 
 // 定义返回的 JSON 结构体
 #[derive(Serialize)]
@@ -97,7 +94,6 @@ impl ProjectService {
         // 查询总记录数
         let total_count = self.repository.count_projects(keyword)?;
 
-
         // 返回响应
         Ok(ProjectListResponse {
             valid: true,
@@ -106,7 +102,6 @@ impl ProjectService {
             current_page,
             page_size,
         })
-
     }
 
     /// 保存项目
@@ -260,4 +255,3 @@ impl ProjectService {
     //     })
     // }
 }
-

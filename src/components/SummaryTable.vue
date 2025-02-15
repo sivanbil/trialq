@@ -24,7 +24,7 @@
       </thead>
       <tbody>
       <!-- 渲染数据行 -->
-      <tr v-for="(row, rowIndex) in tableData" :key="rowIndex">
+      <tr v-for="(row, rowIndex) in tableData" :key="generateRowKey(row, rowIndex)">
         <td
             v-for="(_, cellIndex) in headers"
             :key="cellIndex"
@@ -82,6 +82,7 @@ export default {
       type: Object,
       required: true,
     },
+
     exportFileNamePrefix: {
       type: String,
       default: '导出表格', // 默认导出文件名称前缀
@@ -146,6 +147,11 @@ export default {
     }
   },
   methods: {
+    // 生成行的唯一 key
+    generateRowKey(row, rowIndex) {
+      // 这里假设数据中有一个唯一标识字段，如果没有可以用 rowIndex 作为备用
+      return row.id || rowIndex;
+    },
     // 生成文件名
     generateFileName() {
       const now = new Date();

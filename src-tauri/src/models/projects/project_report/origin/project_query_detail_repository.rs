@@ -1,10 +1,12 @@
 // project_query_detail_repository.rs
-use crate::models::projects::project_report::origin::project_query_detail_model::{NewProjectQueryDetail, ProjectQueryDetail};
+use crate::models::projects::project_report::origin::project_query_detail_model::{
+    NewProjectQueryDetail, ProjectQueryDetail,
+};
 use crate::models::projects::project_report::origin::schema::project_query_detail::dsl::*;
-use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
 use crate::utils::parse_date;
 use date_formatter::utils::DateFormat;
+use diesel::prelude::*;
+use diesel::r2d2::{ConnectionManager, Pool};
 
 #[derive(Debug)]
 pub struct QueryStatistics {
@@ -16,14 +18,17 @@ pub struct QueryStatistics {
 #[derive(Debug)]
 pub struct QueryAgeDistribution {
     pub less_than_7_days: i32,
-    pub between_7_and_14_days: i32,
-    pub between_14_and_21_days: i32,
-    pub between_21_and_30_days: i32,
+    pub more_than_7_days: i32,
+    pub more_than_14_days: i32,
+    pub more_than_21_days: i32,
     pub more_than_30_days: i32,
 }
 
-use chrono::{NaiveDate, Local};
+use chrono::{Local, NaiveDate};
 use log::{error, info};
+use crate::models::projects::Pagination;
+use crate::models::tools::schema::tools::dsl::tools;
+use crate::models::tools::tools_model::Tool;
 
 pub struct ProjectQueryDetailRepository {
     pool: Pool<ConnectionManager<SqliteConnection>>, // 使用 SqliteConnection
@@ -35,7 +40,10 @@ impl ProjectQueryDetailRepository {
     }
 
     // 创建查询详情
-    pub fn create_query_detail(&self, new_query_detail: NewProjectQueryDetail) -> Result<ProjectQueryDetail, String> {
+    pub fn create_query_detail(
+        &self,
+        new_query_detail: NewProjectQueryDetail,
+    ) -> Result<ProjectQueryDetail, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
         diesel::insert_into(project_query_detail)
             .values(&new_query_detail)
@@ -48,7 +56,10 @@ impl ProjectQueryDetailRepository {
     }
 
     // 创建查询详情
-    pub fn batch_create_query_detail(&self, new_query_detail: Vec<NewProjectQueryDetail>) -> Result<ProjectQueryDetail, String> {
+    pub fn batch_create_query_detail(
+        &self,
+        new_query_detail: Vec<NewProjectQueryDetail>,
+    ) -> Result<ProjectQueryDetail, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
         diesel::insert_into(project_query_detail)
             .values(&new_query_detail)
@@ -61,16 +72,28 @@ impl ProjectQueryDetailRepository {
     }
 
     // 根据报告编号查询查询详情
-    pub fn find_query_details_by_report_number(&self, report_no: &str) -> Result<Vec<ProjectQueryDetail>, String> {
+    pub fn find_query_details_by_report_number(
+        &self,
+        report_no: &str,
+        pagination: Pagination
+    ) -> Result<Vec<ProjectQueryDetail>, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
+
+        let offset = (pagination.current_page - 1) * pagination.page_size;
+
         project_query_detail
+            .offset(offset) // 跳过前面的记录
+            .limit(pagination.page_size) // 限制每页的记录数
             .filter(report_number.eq(report_no))
             .load::<ProjectQueryDetail>(&mut conn)
             .map_err(|e| e.to_string())
     }
 
     // 根据 ID 查询查询详情
-    pub fn find_query_detail_by_id(&self, query_detail_id: i32) -> Result<Option<ProjectQueryDetail>, String> {
+    pub fn find_query_detail_by_id(
+        &self,
+        query_detail_id: i32,
+    ) -> Result<Option<ProjectQueryDetail>, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
         project_query_detail
             .find(query_detail_id)
@@ -80,7 +103,11 @@ impl ProjectQueryDetailRepository {
     }
 
     // 更新查询详情
-    pub fn update_query_detail(&self, query_detail_id: i32, updated_query_detail: NewProjectQueryDetail) -> Result<usize, String> {
+    pub fn update_query_detail(
+        &self,
+        query_detail_id: i32,
+        updated_query_detail: NewProjectQueryDetail,
+    ) -> Result<usize, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
         diesel::update(project_query_detail.find(query_detail_id))
             .set(&updated_query_detail)
@@ -89,9 +116,9 @@ impl ProjectQueryDetailRepository {
     }
 
     // 删除查询详情
-    pub fn delete_query_detail(&self, query_detail_id: i32) -> Result<usize, String> {
+    pub fn delete_query_detail(&self, report_no: String) -> Result<usize, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
-        diesel::delete(project_query_detail.find(query_detail_id))
+        diesel::delete(project_query_detail.filter(report_number.eq(report_no)))
             .execute(&mut conn)
             .map_err(|e| e.to_string())
     }
@@ -106,9 +133,40 @@ impl ProjectQueryDetailRepository {
             .map_err(|e| e.to_string())
     }
 
+    fn classify_days_open(
+        &self,
+        days_open: i64,
+        less_than_7_days: &mut i32,
+        more_than_7_days: &mut i32,
+        more_than_14_days: &mut i32,
+        more_than_21_days: &mut i32,
+        more_than_30_days: &mut i32,
+    ) {
+        if days_open <= 6 {
+            *less_than_7_days += 1;
+        }
+        if days_open > 7 {
+            *more_than_7_days += 1;
+        }
+        if days_open > 14 {
+            *more_than_14_days += 1;
+        }
+        if days_open > 21 {
+            *more_than_21_days += 1;
+        }
+
+        if days_open >=30 {
+            *more_than_30_days += 1;
+        }
+    }
+
     // 获取查询统计信息
     // 获取查询统计信息
-    pub fn get_query_statistics(&self, report_number_str: &str, site_number: &str) -> Result<QueryStatistics, String> {
+    pub fn get_query_statistics(
+        &self,
+        report_number_str: &str,
+        site_number: &str,
+    ) -> Result<QueryStatistics, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
 
         // 获取 Answered Query 的数量
@@ -122,18 +180,24 @@ impl ProjectQueryDetailRepository {
         // 获取所有 Open 状态的 Query 的 qry_open_date
         let open_queries: Vec<String> = project_query_detail
             .filter(qry_status.eq("Open"))
-            .filter(report_number.eq(report_number))
+            .filter(report_number.eq(report_number_str))
             .filter(study_environment_site.eq(site_number))
             .select(qry_open_date)
             .load(&mut conn)
             .map_err(|e| e.to_string())?;
 
         let opened_query_count: i64 = open_queries.len() as i64;
+        println!(
+            "site_number:{}, {:?},Opened query count: {}",
+            site_number,
+            report_number_str,
+            open_queries.len()
+        );
         // 计算 Query 的日期分布
         let mut less_than_7_days = 0;
-        let mut between_7_and_14_days = 0;
-        let mut between_14_and_21_days = 0;
-        let mut between_21_and_30_days = 0;
+        let mut more_than_7_days = 0;
+        let mut more_than_14_days = 0;
+        let mut more_than_21_days = 0;
         let mut more_than_30_days = 0;
         let current_date = Local::now().naive_local().date();
         for qry_open_date_str in open_queries {
@@ -144,18 +208,16 @@ impl ProjectQueryDetailRepository {
                     .map_err(|e| format!("Failed to parse date: {}", e))?;
 
                 // 计算日期差值
-                println!("current_date:{}, parsed_qry_open_date: {:?}", current_date, parsed_qry_open_date);
+                println!(
+                    "current_date:{}, parsed_qry_open_date: {:?}",
+                    current_date, parsed_qry_open_date
+                );
                 let days_open = (current_date - parsed_qry_open_date).num_days();
-                // 根据差值分类
-                match days_open {
-                    0..=6 => less_than_7_days += 1,
-                    7..=13 => between_7_and_14_days += 1,
-                    14..=20 => between_14_and_21_days += 1,
-                    21..=30 => between_21_and_30_days += 1,
-                    _ => more_than_30_days += 1,
-                }
-            }
+                println!("days_open: {:?}", days_open);
 
+                self.classify_days_open(days_open, &mut less_than_7_days, &mut more_than_7_days,&mut more_than_14_days, &mut more_than_21_days, &mut more_than_30_days);
+
+            }
         }
         // 返回结果
         Ok(QueryStatistics {
@@ -163,9 +225,9 @@ impl ProjectQueryDetailRepository {
             opened_query_count,
             query_age_distribution: QueryAgeDistribution {
                 less_than_7_days,
-                between_7_and_14_days,
-                between_14_and_21_days,
-                between_21_and_30_days,
+                more_than_7_days,
+                more_than_14_days,
+                more_than_21_days,
                 more_than_30_days,
             },
         })

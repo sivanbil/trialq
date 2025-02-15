@@ -1,6 +1,6 @@
 // project_report_data_model.rs
-use serde::{Deserialize, Serialize};
 use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
 #[derive(Queryable, Serialize, Deserialize, Debug)]
 pub struct ProjectReportData {
     pub id: i32,
@@ -16,17 +16,17 @@ pub struct ProjectReportData {
     pub edc_status_comment: String,
     pub percent_pages_entered: String, // 改为 f64
     pub percent_pages_sdved: String,   // 改为 f64
-    pub answered_query: i32,        // 改为 i32
-    pub opened_query: i32,          // 改为 i32
+    pub answered_query: i32,           // 改为 i32
+    pub opened_query: i32,             // 改为 i32
     pub op_gt7: i32,
     pub op_gt14: i32,
     pub op_gt21: i32,
     pub op_gt30: i32,
-    pub report_number: String
+    pub report_number: String,
 }
 
 // project_report_data_model.rs
-#[derive(Insertable,AsChangeset, Serialize, Deserialize, Debug)]
+#[derive(Insertable, AsChangeset, Serialize, Deserialize, Debug)]
 #[diesel(table_name = crate::models::projects::project_report::schema::project_report_data)]
 pub struct NewProjectReportData {
     pub site: String,
@@ -47,5 +47,5 @@ pub struct NewProjectReportData {
     pub op_gt14: i32,
     pub op_gt21: i32,
     pub op_gt30: i32,
-    pub report_number: String
+    pub report_number: String,
 }

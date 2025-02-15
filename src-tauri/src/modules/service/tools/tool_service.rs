@@ -2,7 +2,7 @@ use crate::models::tools::tools_model::{NewTool, Tool};
 use crate::models::tools::tools_repository::{Pagination, ToolsRepository};
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::SqliteConnection;
-use serde::{Serialize};
+use serde::Serialize;
 
 pub struct ToolsService {
     repository: ToolsRepository,
@@ -14,7 +14,6 @@ pub struct DeleteToolResponse {
     message: String, // 返回的消息
 }
 
-
 #[derive(Serialize)]
 pub struct ToolListResponse {
     valid: bool,
@@ -23,7 +22,6 @@ pub struct ToolListResponse {
     current_page: i64, // 当前页码
     page_size: i64,    // 每页大小
 }
-
 
 #[derive(Serialize)]
 pub struct SaveToolResponse {
@@ -147,4 +145,3 @@ impl ToolsService {
         }
     }
 }
-

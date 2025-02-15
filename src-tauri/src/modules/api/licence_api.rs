@@ -5,7 +5,7 @@ use std::{env, panic};
 use tauri::State;
 
 use regitry_code::{decode_code, read_key_file};
-use std::path::{PathBuf};
+use std::path::PathBuf;
 
 // 定义许可证验证响应的结构
 #[derive(Serialize, Deserialize)]

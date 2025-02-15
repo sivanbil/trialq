@@ -1,28 +1,21 @@
-use crate::AppState;
-use tauri::State;
+use std::collections::HashMap;
+use log::info;
 use crate::models::projects::project_base::project_site_model::NewProjectSite;
-use crate::modules::{
-    service::{
-        projects::{
-            project_service::{
-                ProjectListResponse,
-                SaveProjectResponse,
-                GetProjectResponse,
-                DeleteProjectResponse,
-                SupportedTemplateResponse,
-
-            },
-            report_service::{
-                Response,
-
-            }
-        }
-
-    }
-};
 use crate::modules::service::enums::SupportedTemplate;
-use crate::modules::service::projects::report_service::{OriginExcelDataResponse, ReportDetailResponse, ReportListResponse, SummaryResponse};
-use crate::modules::service::projects::site_service::{DeleteSiteResponse, ImportSiteResponse, SaveSiteResponse, SiteListResponse};
+use crate::modules::service::projects::report_service::{DeleteResponse, OriginExcelDataResponse, ReportDetailResponse, ReportListResponse, ResponseData, SuccessResponse, SummaryResponse};
+use crate::modules::service::projects::site_service::{
+    DeleteSiteResponse, ImportSiteResponse, SaveSiteResponse, SiteListResponse,
+};
+use crate::modules::service::projects::{
+    project_service::{
+        DeleteProjectResponse, GetProjectResponse, ProjectListResponse, SaveProjectResponse,
+        SupportedTemplateResponse,
+    },
+    report_service::Response,
+};
+use crate::AppState;
+use tauri::{AppHandle, State};
+
 
 #[tauri::command]
 pub async fn fetch_project_list(
@@ -38,7 +31,6 @@ pub async fn fetch_project_list(
     project_service.fetch_project_list(current_page, page_size, keyword)
 }
 
-
 #[tauri::command]
 pub async fn save_project(
     state: State<'_, AppState>, // 从状态中获取 AppState
@@ -51,7 +43,6 @@ pub async fn save_project(
     project_service.save_project(project_name, description)
 }
 
-
 #[tauri::command]
 pub async fn delete_project(
     state: State<'_, AppState>, // 从状态中获取 AppState
@@ -63,7 +54,6 @@ pub async fn delete_project(
     // 删除项目
     project_service.delete_project(project_id)
 }
-
 
 #[tauri::command]
 pub async fn get_project_by_id(
@@ -81,15 +71,17 @@ pub async fn get_project_by_id(
 #[tauri::command]
 pub async fn handle_template_and_files(
     state: State<'_, AppState>, // 从状态中获取 AppState
-    files: Vec<String>, template_name: String, project_no:String) -> Result<Response, String> {
+    files: Vec<String>,
+    template_name: String,
+    project_no: String,
+) -> Result<Response, String> {
     let report_service = &state.report_service;
-    println!("Received template name: {}", template_name);
-    println!("Received project_no: {}", project_no);
-    println!("Received files:{:?}",{files.clone()});
+    info!("Received template name: {}", template_name);
+    info!("Received project_no: {}", project_no);
+    info!("Received files:{:?}", { files.clone() });
 
     report_service.async_process_excel_files(files, project_no)
 }
-
 
 #[tauri::command]
 pub async fn fetch_supported_template_list(
@@ -107,8 +99,9 @@ pub async fn fetch_supported_template_list(
 pub async fn fetch_report_list(
     state: State<'_, AppState>,
     current_page: i64,
-    page_size: i64, keyword: Option<String>) -> Result<ReportListResponse, String> {
-
+    page_size: i64,
+    keyword: Option<String>,
+) -> Result<ReportListResponse, String> {
     let report_service = &state.report_service;
     let result = report_service.find_reports_paginated(current_page, page_size, keyword);
     result
@@ -121,8 +114,9 @@ pub async fn fetch_site_list(
     current_page: i64,
     page_size: i64,
     project_no: String,
-    keyword: Option<String>) -> Result<SiteListResponse, String> {
-
+    keyword: Option<String>,
+) -> Result<SiteListResponse, String> {
+    info!("获取{}中心", project_no);
     let service = &state.site_service;
     let result = service.fetch_site_list(current_page, page_size, project_no, keyword);
     result
@@ -131,8 +125,12 @@ pub async fn fetch_site_list(
 // 存储项目中心
 #[tauri::command]
 pub async fn save_project_site(
-    state: State<'_, AppState>, project_name: String, site_number: String,
-    site_name: Option<String>, site_cra: Option<String>) -> Result<SaveSiteResponse, String> {
+    state: State<'_, AppState>,
+    project_name: String,
+    site_number: String,
+    site_name: Option<String>,
+    site_cra: Option<String>,
+) -> Result<SaveSiteResponse, String> {
     let service = &state.site_service;
     let result = service.save_site(project_name, site_number, site_name, site_cra);
     result
@@ -141,7 +139,8 @@ pub async fn save_project_site(
 #[tauri::command]
 pub async fn delete_project_site(
     state: State<'_, AppState>,
-    site_id: i32) -> Result<DeleteSiteResponse, String> {
+    site_id: i32,
+) -> Result<DeleteSiteResponse, String> {
     let service = &state.site_service;
     let result = service.delete_site(site_id);
     result
@@ -153,23 +152,28 @@ pub async fn update_site_by_id(
     project_name: String,
     site_number: String,
     site_name: Option<String>,
-    site_cra: Option<String>) -> Result<SaveSiteResponse, String> {
+    site_cra: Option<String>,
+) -> Result<SaveSiteResponse, String> {
     let service = &state.site_service;
 
-    let result = service.update_site_by_id(site_id, NewProjectSite {
-        project_name,
-        site_number,
-        site_name: site_name.unwrap_or(String::from("")),
-        site_cra: site_cra.unwrap_or(String::from("")),
-    });
+    let result = service.update_site_by_id(
+        site_id,
+        NewProjectSite {
+            project_name,
+            site_number,
+            site_name: site_name.unwrap_or(String::from("")),
+            site_cra: site_cra.unwrap_or(String::from("")),
+        },
+    );
     result
 }
-
 
 #[tauri::command]
 pub async fn handle_site_file(
     state: State<'_, AppState>, // 从状态中获取 AppState
-    file_path: String,  project_number:String) -> Result<ImportSiteResponse, String> {
+    file_path: String,
+    project_number: String,
+) -> Result<ImportSiteResponse, String> {
     println!("{:?}", file_path);
     println!("{:?}", project_number);
     let service = &state.site_service;
@@ -177,36 +181,76 @@ pub async fn handle_site_file(
     service.async_process_excel_files(file_path, project_number)
 }
 
-
 #[tauri::command]
 pub async fn analyze_report_data(
     state: State<'_, AppState>, // 从状态中获取 AppState
     report_number: String,
     project_number: String,
-) -> Result<SummaryResponse, String>{
+) -> Result<SummaryResponse, String> {
     let service = &state.report_service;
 
     // 删除工具
     service.summary_report_data(&*report_number, &*project_number)
 }
 
-
 #[tauri::command]
-pub async fn fetch_report_detail(state: State<'_, AppState>,
-                           report_number: String) -> Result<ReportDetailResponse, String> {
+pub async fn fetch_report_detail(
+    state: State<'_, AppState>,
+    report_number: String,
+) -> Result<ReportDetailResponse, String> {
     let service = &state.report_service;
     service.summary_report_detail(&*report_number)
 }
 
 #[tauri::command]
-pub async fn fetch_origin_detail(
+pub async fn delete_report_item(
     state: State<'_, AppState>,
     report_number: String,
-    source_file_name: String) -> Result<OriginExcelDataResponse, String> {
+) -> Result<DeleteResponse, String> {
     let service = &state.report_service;
-    service.origin_excel_data( &*report_number,&*source_file_name)
+    service.delete_report(report_number)
 }
 
+#[tauri::command]
+pub async fn fetch_origin_detail(
+    state: State<'_, AppState>,
+    app: AppHandle,
+    report_number: String,
+    source_file_name: String,
+    table_header: Vec<String>,
+    table_header_map: HashMap<String, String>
+) -> Result<SuccessResponse, String> {
+    let service = &state.report_service;
+    let mut current_page = 1;
+    let page_size = 500;
+    info!("table_header:{:?}", table_header);
+    let mut all_responses: Vec<OriginExcelDataResponse> = Vec::new();
 
+    info!("fetch data");
+    loop {
+        info!("fetch data current_page:{}", current_page);
+
+        let result = service.origin_excel_data(&report_number, &source_file_name, current_page, page_size);
+
+        match result {
+            Ok(response) => {
+                if response.data.is_empty() {
+                    break;
+                }
+                all_responses.push(response);
+                current_page += 1;
+            }
+            Err(err) => {
+                return Err(err);
+            }
+        }
+    }
+    info!("start export excel");
+    crate::utils::export_excel(app, table_header, table_header_map, all_responses, source_file_name)?;
+    Ok(SuccessResponse {
+        valid: true,
+        message: "success".to_string()
+    })
+}
 
 

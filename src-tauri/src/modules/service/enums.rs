@@ -22,10 +22,9 @@ impl TaskStatus {
     }
 }
 
-
 use std::str::FromStr; // 导入 FromStr trait
 use strum::IntoEnumIterator; // 导入 IntoEnumIterator trait
-use strum_macros::{EnumIter, EnumString, AsRefStr, Display}; // 导入宏
+use strum_macros::{AsRefStr, Display, EnumIter, EnumString}; // 导入宏
 
 #[derive(Debug, Clone, PartialEq, EnumIter, EnumString, AsRefStr, Display)]
 pub enum SupportedTemplate {
@@ -42,7 +41,9 @@ impl SupportedTemplate {
 
     // 获取所有支持的模板名称
     pub fn all_supported_templates() -> Vec<String> {
-        SupportedTemplate::iter().map(|t| t.as_ref().to_string()).collect()
+        SupportedTemplate::iter()
+            .map(|t| t.as_ref().to_string())
+            .collect()
     }
 
     // 获取所有支持的模板枚举值

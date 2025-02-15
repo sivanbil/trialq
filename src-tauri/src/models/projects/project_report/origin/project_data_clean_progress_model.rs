@@ -1,6 +1,6 @@
 // project_data_clean_progress_model.rs
-use serde::{Deserialize, Serialize};
 use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Queryable, Serialize, Deserialize, Debug)]
 pub struct ProjectDataCleanProgress {
@@ -17,9 +17,9 @@ pub struct ProjectDataCleanProgress {
     pub report_number: String,
 }
 
-use crate::models::projects::project_report::model_convert_utils::{deserialize_string_to_i32};
+use crate::models::projects::project_report::model_convert_utils::deserialize_string_to_i32;
 // project_data_clean_progress_model.rs
-#[derive(Insertable,AsChangeset, Serialize, Deserialize, Debug)]
+#[derive(Insertable, AsChangeset, Serialize, Deserialize, Debug)]
 #[diesel(table_name = crate::models::projects::project_report::origin::schema::project_data_clean_progress)]
 pub struct NewProjectDataCleanProgress {
     pub study: String,
@@ -38,7 +38,3 @@ pub struct NewProjectDataCleanProgress {
     #[serde(default)]
     pub report_number: String,
 }
-
-
-
-

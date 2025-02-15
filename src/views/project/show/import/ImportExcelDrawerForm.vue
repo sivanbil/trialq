@@ -184,7 +184,7 @@
       <!-- 操作按钮 -->
       <div class="mt-6 flex justify-between">
         <button
-            v-if="currentStep > 1"
+            v-if="currentStep > 1 && currentStep <= 3"
             @click="prevStep"
             class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
         >
@@ -195,7 +195,7 @@
             @click="close"
             class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
         >
-          取消
+          关闭
         </button>
         <button
             v-if="currentStep < 4"
@@ -368,12 +368,15 @@ export default {
     },
     // 确认导入
     async confirmImport() {
+      // 显示不可关闭的提示框
+      const closeModal = this.$showModal("系统正在导入数据，请不要关闭程序...", {
+        showCloseButton: false, // 隐藏关闭按钮
+        allowOutsideClick: false, // 禁止点击外部关闭
+        useListener: true,
+        eventName: "import_data_progress"
+      });
       try {
-        // 显示不可关闭的提示框
-        const closeModal = this.$showModal("系统正在导入数据，请不要关闭程序...", {
-          showCloseButton: false, // 隐藏关闭按钮
-          allowOutsideClick: false, // 禁止点击外部关闭
-        });
+
 
         // 调用导入接口
         const result = await this.$rustInvoke("handle_template_and_files", {
@@ -385,18 +388,25 @@ export default {
             this.selectedFiles.missingPage == null ? '' : this.selectedFiles.missingPage,
           ],
         });
+        if (typeof result === 'object' && result!== null) {
+          if (result.valid) {
+            this.reportNo = result.data.reportNumber
+            console.log("文件导入成功:", result);
+            closeModal(); // 关闭提示框
+            this.currentStep = 4; // 切换到第四步
 
-        if (result.valid) {
-          this.reportNo = result.data.reportNumber
-          console.log("文件导入成功:", result);
-          closeModal(); // 关闭提示框
-          this.currentStep = 4; // 切换到第四步
+            await this.analyzeData();
+          } else {
+            closeModal(); // 关闭提示框
+            this.error = "文件导入失败，请重试";
+          }
         } else {
           closeModal(); // 关闭提示框
-          this.error = "文件导入失败，请重试";
+          this.$showModal(result);
         }
       } catch (error) {
-        console.error("文件导入失败:", error);
+        closeModal(); // 关闭提示框
+        this.$showModal("部分文件导入失败,如果字符集问题，尽量是通过拷贝所有数据到新的excel表格里:（"+error+"),如果生成了记录，可以将记录删除");
         this.error = "文件导入失败，请重试";
       }
     },

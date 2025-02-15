@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
 use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Queryable, Serialize, Deserialize, Debug)]
 pub struct ProjectSite {
@@ -10,7 +10,7 @@ pub struct ProjectSite {
     pub site_cra: String,
 }
 
-#[derive(Insertable,AsChangeset, Serialize, Deserialize, Debug)]
+#[derive(Insertable, AsChangeset, Serialize, Deserialize, Debug)]
 #[diesel(table_name = crate::models::projects::project_base::schema::project_site)]
 pub struct NewProjectSite {
     #[serde(default)]

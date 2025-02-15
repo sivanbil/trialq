@@ -39,4 +39,3 @@ pub fn scan_directory(path: String) -> Result<Vec<String>, String> {
 
     Ok(files)
 }
-

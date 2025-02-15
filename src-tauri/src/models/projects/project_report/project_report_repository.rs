@@ -1,9 +1,11 @@
 // project_report_repository.rs
-use crate::models::projects::project_report::project_report_model::{NewProjectReport, ProjectReport};
+use crate::models::projects::project_report::project_report_model::{
+    NewProjectReport, ProjectReport,
+};
 use crate::models::projects::project_report::schema::project_report::dsl::*;
+use crate::models::projects::Pagination;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
-use crate::models::projects::Pagination;
 
 pub struct ProjectReportRepository {
     pool: Pool<ConnectionManager<SqliteConnection>>, // 使用 SqliteConnection
@@ -28,7 +30,10 @@ impl ProjectReportRepository {
     }
 
     // 根据项目编号查询报告
-    pub fn find_reports_by_project_number(&self, project_no: &str) -> Result<Vec<ProjectReport>, String> {
+    pub fn find_reports_by_project_number(
+        &self,
+        project_no: &str,
+    ) -> Result<Vec<ProjectReport>, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
         project_report
             .filter(project_number.eq(project_no))
@@ -37,7 +42,10 @@ impl ProjectReportRepository {
     }
 
     // 根据报告编号查询报告
-    pub fn find_report_by_report_number(&self, report_no: &str) -> Result<Option<ProjectReport>, String> {
+    pub fn find_report_by_report_number(
+        &self,
+        report_no: &str,
+    ) -> Result<Option<ProjectReport>, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
         project_report
             .filter(report_number.eq(report_no))
@@ -57,7 +65,11 @@ impl ProjectReportRepository {
     }
 
     // 更新报告
-    pub fn update_report(&self, report_id: i32, updated_report: NewProjectReport) -> Result<usize, String> {
+    pub fn update_report(
+        &self,
+        report_id: i32,
+        updated_report: NewProjectReport,
+    ) -> Result<usize, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
         diesel::update(project_report.find(report_id))
             .set(&updated_report)
@@ -75,15 +87,18 @@ impl ProjectReportRepository {
     }
 
     // 删除报告
-    pub fn delete_report(&self, report_id: i32) -> Result<usize, String> {
+    pub fn delete_report(&self, report_no: String) -> Result<usize, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
-        diesel::delete(project_report.find(report_id))
+        diesel::delete(project_report.filter(report_number.eq(report_no)))
             .execute(&mut conn)
             .map_err(|e| e.to_string())
     }
 
     // 分页查询项目（支持 keyword 检索）
-    pub fn find_project_reports_paginated(&self, pagination: Pagination) -> Result<Vec<ProjectReport>, String> {
+    pub fn find_project_reports_paginated(
+        &self,
+        pagination: Pagination,
+    ) -> Result<Vec<ProjectReport>, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
 
         // 计算 offset
@@ -100,7 +115,7 @@ impl ProjectReportRepository {
 
         // 执行分页查询
         query
-            .order(id.asc()) // 按 id 升序排序
+            .order(id.desc()) // 按 id 升序排序
             .offset(offset) // 跳过前面的记录
             .limit(pagination.page_size) // 限制每页的记录数
             .load::<ProjectReport>(&mut conn)
@@ -109,7 +124,10 @@ impl ProjectReportRepository {
 
     /// 根据项目编号统计报告总数
     /// 如果 project_no 为空，统计所有报告的总数
-    pub fn count_reports_by_project_number(&self, project_no: Option<String>) -> Result<i64, String> {
+    pub fn count_reports_by_project_number(
+        &self,
+        project_no: Option<String>,
+    ) -> Result<i64, String> {
         let mut conn = self.pool.get().map_err(|e| e.to_string())?;
 
         // 构建查询

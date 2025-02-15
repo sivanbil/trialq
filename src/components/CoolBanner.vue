@@ -20,7 +20,7 @@
   justify-content: center;
   align-items: center;
   height: 200px;
-  background: linear-gradient(135deg, #3d3d3d, #003366);
+  background:#F0F0F0;
   border-radius: 10px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
@@ -32,8 +32,7 @@
 
 .slogan-main {
   font-size: 3rem;
-  font-weight: bold;
-  background: linear-gradient(90deg, #00ffff, #00ffcc);
+  background: #000000;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: glow 2s infinite alternate;
@@ -43,7 +42,7 @@
   display: block;
   font-size: 1.2rem;
   margin-top: 20px;
-  color: rgba(255, 255, 255, 0.8);
+  color: #000000;
   animation: fadeIn 3s ease-in-out;
 }
 

@@ -1,21 +1,23 @@
-use calamine::{open_workbook, Reader, Xlsx, Xls};
+use crate::CONFIG_DIR;
+use calamine::{open_workbook, Reader, Xls, Xlsx};
 use csv::ReaderBuilder;
+use log::{debug, error, info};
+use mlua::Lua;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::{Path, PathBuf};
-use log::{debug, info};
-use mlua::Lua;
-use serde::{Serialize, Deserialize};
-use crate::CONFIG_DIR;
-
+use rayon::iter::ParallelIterator;
+use rayon::prelude::IntoParallelRefIterator;
+use tauri::{AppHandle, Emitter};
 // 定义 DSL 规则的结构体
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct HeaderRule {
-    name: String,                // 表头名称
-    alias: String, // 验证规则的别名（用于生成列名）
-    data_type: String,           // 数据类型（number, string, date）
-    required: bool,              // 是否必填
-    #[serde(default)]            // 如果字段不存在，使用默认值
+    name: String,      // 表头名称
+    alias: String,     // 验证规则的别名（用于生成列名）
+    data_type: String, // 数据类型（number, string, date）
+    required: bool,    // 是否必填
+    #[serde(default)] // 如果字段不存在，使用默认值
     custom_validation: Option<Vec<CustomValidationRule>>, // 自定义验证规则数组
 }
 
@@ -26,15 +28,15 @@ pub struct CustomValidationRule {
     alias: String, // 验证规则的别名（用于生成列名）
     rule: String,  // 验证规则
     #[serde(default)]
-    is_ok: u8,     // 验证结果，1 表示通过，0 表示失败
+    is_ok: u8, // 验证结果，1 表示通过，0 表示失败
 }
 
 // 定义验证结果的结构体
 #[derive(Debug, Serialize, Clone)]
 pub struct ValidationResult {
     pub data: HashMap<String, String>, // 解析的数据
-    is_valid: bool,               // 是否通过验证
-    errors: Vec<String>,          // 错误信息
+    is_valid: bool,                    // 是否通过验证
+    errors: Vec<String>,               // 错误信息
     pub custom_validation_results: Vec<CustomValidationRule>, // 自定义验证结果
 }
 
@@ -50,6 +52,7 @@ struct ValidationRule {
 struct ValidationRules {
     validations: Vec<ValidationRule>, // 验证规则列表
 }
+use rayon::ThreadPoolBuilder; // 引入 ThreadPoolBuilder
 
 // 定义文件处理器结构体
 pub struct FileProcessor;
@@ -62,64 +65,73 @@ impl FileProcessor {
         rules: &[HeaderRule],
         validation_rules: &ValidationRules,
     ) -> Result<Vec<ValidationResult>, Box<dyn Error>> {
-        let mut results = Vec::new();
-
         // 验证表头是否匹配规则
         for rule in rules {
             if !headers.contains(&rule.name) {
-                return Err(format!("表头不匹配: 未找到预期的表头 '{}'", rule.name).into());
+                let x = format!("表头不匹配: 未找到预期的表头 '{}'", rule.name).into();
+                error!("{}", x);
+                return Err(x);
             }
         }
 
-        // 解析数据行
-        for row in rows {
-            let mut row_data = HashMap::new();
-            let mut is_valid = true;
-            let mut errors = Vec::new();
-            let mut custom_validation_results = Vec::new();
+        // 创建自定义线程池并设置最大线程数为 10//todo
+        let pool = ThreadPoolBuilder::new().num_threads(4).build()?;
+        let results: Vec<ValidationResult> = pool.install(|| {
+            rows.par_iter().map(|row| {
+                let mut row_data = HashMap::new();
+                let mut is_valid = true;
+                let mut errors = Vec::new();
+                let mut custom_validation_results = Vec::new();
 
-            for (i, cell) in row.iter().enumerate() {
-                if i >= headers.len() {
-                    break;
-                }
-                let header_name = headers[i].clone();
-                if let Some(rule) = rules.iter().find(|r| r.name == header_name) {
-                    let value = cell.to_string();
-
-                    // 检查必填字段
-                    if rule.required && value.is_empty() {
-                        is_valid = false;
-                        errors.push(format!("必填字段为空: {}", rule.name));
+                for (i, cell) in row.iter().enumerate() {
+                    if i >= headers.len() {
+                        break;
                     }
+                    let header_name = headers[i].clone();
+                    if let Some(rule) = rules.iter().find(|r| r.name == header_name) {
+                        let value = cell.to_string();
 
-                    let new_column_name = format!("{}", rule.alias);
-                    row_data.insert(new_column_name, value.clone());
-                    // 自定义验证
-                    if let Some(validations) = &rule.custom_validation {
-                        for validation in validations.iter() {
-                            let is_ok = Self::eval_custom_validation(&value, &validation.rule, validation_rules)?;
-                            let mut validation_result = validation.clone(); // 克隆验证规则
-                            validation_result.is_ok = if is_ok { 1 } else { 0 }; // 更新验证结果
-                            custom_validation_results.push(validation_result); // 存储验证结果
+                        // 检查必填字段
+                        if rule.required && value.is_empty() {
+                            is_valid = false;
+                            errors.push(format!("必填字段为空: {}", rule.name));
+                        }
 
-                            // 动态增加列
-                            let new_column_name = format!("{}", validation.alias);
-                            let new_column_value = if is_ok { 1 } else { 0 };
-                            row_data.insert(new_column_name, new_column_value.to_string());
+                        let new_column_name = format!("{}", rule.alias);
+                        row_data.insert(new_column_name, value.clone());
+                        // 自定义验证
+                        if let Some(validations) = &rule.custom_validation {
+                            for validation in validations.iter() {
+                                let is_ok = Self::eval_custom_validation(
+                                    &value,
+                                    &validation.rule,
+                                    validation_rules,
+                                ).unwrap_or_else(|e| {
+                                    error!("自定义验证出错: {}", e);
+                                    false
+                                });
+                                let mut validation_result = validation.clone(); // 克隆验证规则
+                                validation_result.is_ok = if is_ok { 1 } else { 0 }; // 更新验证结果
+                                custom_validation_results.push(validation_result); // 存储验证结果
+
+                                // 动态增加列
+                                let new_column_name = format!("{}", validation.alias);
+                                let new_column_value = if is_ok { 1 } else { 0 };
+                                row_data.insert(new_column_name, new_column_value.to_string());
+                            }
                         }
                     }
                 }
-            }
-            debug!("row_data:{:#?}", &row_data);
+                debug!("row_data:{:#?}", &row_data);
 
-            results.push(ValidationResult {
-                data: row_data,
-                is_valid,
-                errors,
-                custom_validation_results,
-            });
-        }
-
+                ValidationResult {
+                    data: row_data,
+                    is_valid,
+                    errors,
+                    custom_validation_results,
+                }
+            }).collect()
+        });
         Ok(results)
     }
 
@@ -136,10 +148,20 @@ impl FileProcessor {
         let range = workbook.worksheet_range("Sheet1")?;
 
         // 获取表头行
-        let headers: Vec<String> = range.rows().next().unwrap().iter().map(|h| h.to_string()).collect();
+        let headers: Vec<String> = range
+            .rows()
+            .next()
+            .unwrap()
+            .iter()
+            .map(|h| h.to_string())
+            .collect();
 
         // 获取数据行
-        let rows: Vec<Vec<String>> = range.rows().skip(1).map(|row| row.iter().map(|cell| cell.to_string()).collect()).collect();
+        let rows: Vec<Vec<String>> = range
+            .rows()
+            .skip(1)
+            .map(|row| row.iter().map(|cell| cell.to_string()).collect())
+            .collect();
         // 调用通用解析函数
         Self::parse_data_with_rules(headers, rows, rules, validation_rules)
     }
@@ -154,11 +176,24 @@ impl FileProcessor {
         let mut rdr = ReaderBuilder::new().from_path(path)?;
 
         // 获取表头行
-        let headers = rdr.headers()?.iter().map(|h| h.to_string()).collect::<Vec<String>>();
+        let headers = rdr
+            .headers()?
+            .iter()
+            .map(|h| h.to_string())
+            .collect::<Vec<String>>();
 
         // 获取数据行
-        let rows: Vec<Vec<String>> = rdr.records().map(|record| record.unwrap().iter().map(|cell| cell.to_string()).collect()).collect();
-
+        let rows: Vec<Vec<String>> = rdr
+            .records()
+            .map(|record| {
+                record
+                    .unwrap()
+                    .iter()
+                    .map(|cell| cell.to_string())
+                    .collect()
+            })
+            .collect();
+        info!("path:{} rows length:{:#?}", path, &rows.len());
         // 调用通用解析函数
         Self::parse_data_with_rules(headers, rows, rules, validation_rules)
     }
@@ -170,7 +205,11 @@ impl FileProcessor {
         validation_rules: &ValidationRules,
     ) -> Result<bool, Box<dyn Error>> {
         // 查找匹配的验证规则
-        if let Some(rule) = validation_rules.validations.iter().find(|r| r.rule == validation) {
+        if let Some(rule) = validation_rules
+            .validations
+            .iter()
+            .find(|r| r.rule == validation)
+        {
             // 使用 mlua 执行 Lua 代码
             let lua = Lua::new();
             let lua_code = format!("value = '{}'; return {}", value, rule.rule);
@@ -199,7 +238,8 @@ impl FileProcessor {
     fn get_config_path(file_name: &str, config_dir: &PathBuf) -> Result<PathBuf, Box<dyn Error>> {
         let file_name_lower = file_name.to_lowercase();
 
-        let config_name = if file_name_lower.contains("query") && file_name_lower.contains("detail") {
+        let config_name = if file_name_lower.contains("query") && file_name_lower.contains("detail")
+        {
             "query_detail_config.yaml"
         } else if file_name_lower.contains("cleaning") && file_name_lower.contains("data") {
             "cleaning_data_config.yaml"
@@ -208,11 +248,13 @@ impl FileProcessor {
         } else if file_name_lower.contains("import_site") {
             "import_site_config.yaml"
         } else {
+            error!("未找到匹配的配置文件: {}", file_name);
             return Err(format!("未找到匹配的配置文件: {}", file_name).into());
         };
 
         let config_path = config_dir.join(config_name);
         if !config_path.exists() {
+            error!("配置文件不存在: {}", config_path.display());
             return Err(format!("配置文件不存在: {}", config_path.display()).into());
         }
 
@@ -221,10 +263,7 @@ impl FileProcessor {
 
     // 扫描目录并处理文件
     // 处理单个文件并返回结果
-    pub fn process_file<F>(
-        file_path: String,
-        callback: F,
-    ) -> Result<(), Box<dyn Error>>
+    pub fn process_file<F>(file_path: String, callback: F) -> Result<(), Box<dyn Error>>
     where
         F: Fn(Vec<ValidationResult>, &str) -> (),
     {
@@ -232,19 +271,26 @@ impl FileProcessor {
         let file_name = file_path.file_stem().unwrap().to_str().unwrap();
         let validation_path = CONFIG_DIR.join(format!("{}.yaml", "support_validation"));
 
-        let config_path = Self::get_config_path(file_name, &*CONFIG_DIR).map_err(|e| {
-            format!("处理文件 {} 时出错: {}", file_path.display(), e)
-        })?;
+        let config_path = Self::get_config_path(file_name, &*CONFIG_DIR)
+            .map_err(|e| {
+                format!("处理文件 {} 时出错: {}", file_path.display(), e)
+            })?;
         // 读取 YAML 配置文件
         let rules = Self::read_yaml_config(config_path.to_str().unwrap())?;
 
-        let validation_rules = Self::read_validation_rules(validation_path.to_str().unwrap()).map_err(|e| {
-            format!("读取验证规则文件时出错: {}", e)
-        })?;
+        let validation_rules = Self::read_validation_rules(validation_path.to_str().unwrap())
+            .map_err(|e| format!("读取验证规则文件时出错: {}", e))?;
         info!("====>开始读取文件:{}", file_name);
+
         let results = match file_path.extension().and_then(|s| s.to_str()) {
-            Some("csv") => Self::parse_csv_with_rules(file_path.to_str().unwrap(), &rules, &validation_rules)?,
-            Some("xlsx") | Some("xls") => Self::parse_excel_with_rules(file_path.to_str().unwrap(), &rules, &validation_rules)?,
+            Some("csv") => {
+                Self::parse_csv_with_rules(file_path.to_str().unwrap(), &rules, &validation_rules)?
+            }
+            Some("xlsx") | Some("xls") => Self::parse_excel_with_rules(
+                file_path.to_str().unwrap(),
+                &rules,
+                &validation_rules,
+            )?,
             _ => return Err("不支持的文件格式".into()),
         };
 

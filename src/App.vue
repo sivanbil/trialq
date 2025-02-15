@@ -1,13 +1,7 @@
 <template>
+
   <router-view />
 
-  <!-- 提醒弹窗 -->
-  <div v-if="showReminderModal" class="reminder-modal">
-    <div class="modal-content">
-      <p>{{ reminderMessage }}</p>
-      <button @click="closeReminderModal">关闭</button>
-    </div>
-  </div>
 </template>
 
 <script>
@@ -36,23 +30,6 @@ export default {
     checkLicenceExpiry() {
       if (!this.licenceExpireTime) return;
 
-      const currentTime = Math.floor(Date.now() / 1000); // 当前时间（Unix 时间戳）
-      const remainingTime = this.licenceExpireTime - currentTime; // 剩余时间（秒）
-
-      if (remainingTime <= 0) {
-        // 许可证已过期
-        this.showReminderModal = true;
-        this.reminderMessage = '您的许可证已过期，请尽快续费！';
-      } else if (remainingTime <= 5 * 24 * 60 * 60) {
-        // 许可证即将过期（5 天内）
-        const remainingDays = Math.ceil(remainingTime / (24 * 60 * 60));
-        this.showReminderModal = true;
-        this.reminderMessage = `您的许可证即将过期，还剩 ${remainingDays} 天！`;
-      }
-    },
-    // 关闭提醒弹窗
-    closeReminderModal() {
-      this.showReminderModal = false;
     },
   },
 };

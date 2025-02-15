@@ -5,7 +5,7 @@
         <!-- 左侧 Logo 或标题 -->
         <div class="flex-shrink-0 left-0 text-left">
           <router-link to="/" class="text-xl font-bold text-purple-800">
-            {{ $slogan.main }}
+            {{ $slogan.main }} <span style="font-size:12px;">{{$slogan.version}}</span>
           </router-link>
           <p class="text-sm text-gray-500 mt-1">{{ $slogan.sub }}</p>
         </div>

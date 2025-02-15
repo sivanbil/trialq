@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- 数据列表 -->
-    <div v-if="filteredDataList.length > 0">
+    <div v-if="filteredDataList.length > 0" style="max-height: 400px;overflow: auto;">
       <table class="min-w-full divide-y divide-gray-200 w-full text-left">
         <thead class="bg-gray-50">
         <tr>
@@ -36,12 +36,20 @@
             >
               查看
             </button>
+
+
             <button
                 v-if="item.state !== 2"
                 @click="analyzeData(item)"
                 class="px-3 py-1 text-sm font-medium text-white bg-orange-500 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               开始分析
+            </button>
+            <button
+                @click="deleteItem(item.reportNumber)"
+                class="ml-1 px-3 py-1 text-sm font-medium text-white bg-red-500 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              删除
             </button>
           </td>
         </tr>
@@ -69,22 +77,12 @@
       <SummaryView :reportNumber="reportNumber" />
     </SlotDialog>
 
-    <!-- 查看源文件详情的 Dialog -->
-    <SlotDialog :isOpen="isSourceFileDialogOpen" title="源文件详情" @close="closeSourceFileDialog" :showConfirm="false">
-      <div v-if="sourceFileDetail" class="p-4">
-        <SummaryTable :tableData="sourceFileDetail" :merges="[]" :exportFileNamePrefix="sourceFileName" :headers="sourceFileHeaders" />
-      </div>
-      <div v-else class="text-center py-6 text-gray-500">
-        加载中...
-      </div>
-    </SlotDialog>
   </div>
 </template>
 
 <script>
 import SlotDialog from '@/components/SlotDialog.vue';
 import SummaryView from '@/views/project/show/dashboard/SummaryView.vue';
-import SummaryTable from '@/components/SummaryTable.vue'; // 引入 SummaryTable 组件
 import Pagination from "@/components/PaginationView.vue";
 
 export default {
@@ -93,7 +91,6 @@ export default {
     Pagination,
     SlotDialog,
     SummaryView,
-    SummaryTable, // 注册 SummaryTable 组件
   },
   props: {
     projectNumber: {
@@ -113,8 +110,10 @@ export default {
       isDialogOpen: false,
       isSourceFileDialogOpen: false,
       reportNumber: '',
-      sourceFileDetail: null,
+      sourceFileDetail: [],
       sourceFileHeaders: [],
+      isSourceFileDataLoaded: false, // 数据是否加载完成
+      sourceFileLoadCurrentPage: 1, // 数据是否加载完成
       // header表头
       sourceFileHeadersMap: [
         {
@@ -162,7 +161,7 @@ export default {
         }
       ],
       sourceFileName: '',
-
+      isSourceFilDataLoading: false
     };
   },
   computed: {
@@ -188,6 +187,10 @@ export default {
       this.fetchData();
     },
     async fetchData() {
+      //this.$rustInvoke("process_message");
+      await this.$rustListen('listen_message', (event) => {
+        console.log(event)
+      });
       try {
         const response = await this.$rustInvoke('fetch_report_list', {
           keyword: this.projectNumber,
@@ -209,15 +212,15 @@ export default {
     closeDialog() {
       this.isDialogOpen = false;
     },
-    async deleteItem(reportNumber, index) {
-      if (confirm('确定删除该项目吗？')) {
+    async deleteItem(reportNumber) {
+      let result = await confirm('确定删除该项目吗？');
+      if (result) {
         try {
           const response = await this.$rustInvoke('delete_report_item', {
             reportNumber: reportNumber,
           });
-          if (response.success) {
-            this.dataList.splice(index, 1);
-            this.$showModal('删除成功！');
+          if (response.valid) {
+            await this.fetchData()
           } else {
             this.$showModal('删除失败，请重试！');
           }
@@ -259,33 +262,40 @@ export default {
       closeModal();
     },
     async viewData(sourceFileName, reportNumber) {
+
+      const closeModal = this.$showModal("正在拉取数据数据，请稍后....", {
+        showCloseButton: false,
+      });
       try {
+        if (sourceFileName.toLocaleLowerCase().indexOf("missing") > -1) {
+          this.sourceFileHeaders = this.sourceFileHeadersMap[0];
+        } else if (sourceFileName.toLocaleLowerCase().indexOf("query") > -1) {
+          this.sourceFileHeaders = this.sourceFileHeadersMap[1];
+        } else {
+          this.sourceFileHeaders = this.sourceFileHeadersMap[2];
+        }
+        console.log(this.sourceFileName.toLocaleLowerCase(), this.sourceFileHeaders)
         const response = await this.$rustInvoke('fetch_origin_detail', {
           sourceFileName: sourceFileName,
           reportNumber: reportNumber,
+          currentPage: this.sourceFileLoadCurrentPage,
+          tableHeader: Object.keys(this.sourceFileHeaders),
+          tableHeaderMap: this.sourceFileHeaders,
         });
         if (response.valid) {
-          this.sourceFileName = sourceFileName;
-          this.sourceFileDetail = response.data;
-          if (this.sourceFileName.toLocaleLowerCase().indexOf("missing") > -1) {
-            this.sourceFileHeaders = this.sourceFileHeadersMap[0];
-          } else if (this.sourceFileName.toLocaleLowerCase().indexOf("query") > -1) {
-            this.sourceFileHeaders = this.sourceFileHeadersMap[1];
-          } else {
-            this.sourceFileHeaders = this.sourceFileHeadersMap[2];
-          }
-          this.isSourceFileDialogOpen = true;
+          closeModal();
         } else {
           this.$showModal('获取数据失败，请重试！');
+          closeModal();
         }
       } catch (error) {
         console.error('获取源文件详情失败:', error);
-        this.$showModal('网络异常，请稍后重试！');
+        closeModal();
       }
     },
     closeSourceFileDialog() {
       this.isSourceFileDialogOpen = false;
-      this.sourceFileDetail = null;
+      this.sourceFileDetail = [];
     },
   },
 };

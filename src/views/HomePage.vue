@@ -15,7 +15,7 @@
         <!-- 大磁贴（左边） -->
         <div
             class="tile large"
-            :style="{ backgroundColor: '#ff8c00', pointerEvents: hasLicence ? 'auto' : 'none' }"
+            :style="{ backgroundColor: '#ff8000', pointerEvents: hasLicence ? 'auto' : 'none' }"
             @click="goToProjectManagement"
         >
           <h1>项目管理</h1>
@@ -24,7 +24,7 @@
         <!-- 小磁贴（右上方） -->
         <div
             class="tile small"
-            :style="{ backgroundColor: '#4b0082', pointerEvents: hasLicence ? 'auto' : 'none' }"
+            :style="{ backgroundColor: '#8000FF', pointerEvents: hasLicence ? 'auto' : 'none' }"
             @click="goToToolList"
         >
           <p>常用工具</p>
@@ -33,7 +33,7 @@
         <!-- 小磁贴（右下方） -->
         <div
             class="tile small"
-            :style="{ backgroundColor: '#00bcf2', pointerEvents: hasLicence ? 'auto' : 'none' }"
+            :style="{ backgroundColor: '#0080FF', pointerEvents: hasLicence ? 'auto' : 'none' }"
             @click="goToUserSpace"
         >
           <p>个人设置</p>
@@ -116,8 +116,7 @@ export default {
       }
     },
   },
-  mounted() {
-    // 检查 localStorage 中是否有许可证
+  async mounted() {
     const savedLicenseKey = localStorage.getItem('licenseKey');
     if (savedLicenseKey) {
       this.hasLicence = true;

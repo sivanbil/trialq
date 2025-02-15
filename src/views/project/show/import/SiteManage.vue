@@ -338,7 +338,6 @@ export default {
           siteId: siteId,
         });
         if (response.valid) {
-          this.$showModal('删除成功！');
           await this.fetchCenterData(); // 重新加载数据
         } else {
           this.$showModal('删除失败');
