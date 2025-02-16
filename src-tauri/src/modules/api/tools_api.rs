@@ -1,4 +1,3 @@
-use crate::modules::service::projects::report_service::SummaryResponse;
 use crate::modules::service::tools::tool_service::{
     DeleteToolResponse, SaveToolResponse, ToolListResponse,
 };

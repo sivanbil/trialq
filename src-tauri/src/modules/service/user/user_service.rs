@@ -3,7 +3,7 @@ use crate::models::user::user_repository::UserRepository;
 use date_formatter::utils::format_date;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::SqliteConnection;
-use regitry_code::{encrypt_password, generate_random_string, verify_password};
+use regitry_code::{encrypt_password, generate_random_string};
 use std::time::SystemTime;
 
 pub struct UserService {

@@ -1,15 +1,15 @@
 use crate::CONFIG_DIR;
-use calamine::{open_workbook, Reader, Xls, Xlsx};
+use calamine::{open_workbook, Reader, Xlsx};
 use csv::ReaderBuilder;
-use log::{debug, error, info};
+use log::{error, info};
 use mlua::Lua;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use rayon::iter::ParallelIterator;
 use rayon::prelude::IntoParallelRefIterator;
-use tauri::{AppHandle, Emitter};
+use tauri::AppHandle;
 // 定义 DSL 规则的结构体
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct HeaderRule {

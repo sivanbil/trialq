@@ -19,18 +19,15 @@ use crate::models::projects::{
     },
     Pagination,
 };
-use chrono::{Local, NaiveDate, NaiveDateTime, Utc};
-use date_formatter::utils::{format_date, format_timestamp, DateFormat};
+use chrono::{Local, NaiveDate};
+use date_formatter::utils::{format_timestamp, DateFormat};
 use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::serialize::ToSql;
-use diesel::sql_types::Text;
-use diesel::sqlite::{Sqlite, SqliteConnection};
+use diesel::sqlite::SqliteConnection;
 use log::info;
 use regitry_code::generate_task_number;
 use serde::Serialize;
 use serde_json::Value;
 use std::sync::Arc;
-use std::time::SystemTime;
 use tauri::AppHandle;
 use crate::models::projects::project_report::project_report_data_model::ProjectReportData;
 use crate::modules::service::projects::site_service::SiteService;
@@ -94,7 +91,6 @@ pub struct ResponseData {
     #[serde(rename = "stateName")]
     state_name: String,
 }
-use tauri::{Emitter};
 // 定义返回的 JSON 结构体
 #[derive(Serialize)]
 pub struct Response {
@@ -308,7 +304,7 @@ impl ProjectReportService {
             .map_err(|e| e.to_string())?;
 
 
-        crate::utils::handle_progress_events(app_handle.clone(), "import_data_progress", file_name.clone(), 1u8);
+        crate::utils::handle_progress_events(app_handle.clone(), "import_data_progress", file_name, 1u8);
 
         // 处理文件内容
         let callback = |results: Vec<ValidationResult>, file_name: &str| {
@@ -331,7 +327,7 @@ impl ProjectReportService {
         let mut processed_index = 0;
         for batch in results.chunks(200) {
             processed_index +=1;
-            crate::utils::handle_progress_events(app_handle.clone(), "import_data_progress", file_name.clone(), crate::utils::calculate_percentage_u8(processed_index as f64, total as f64));
+            crate::utils::handle_progress_events(app_handle.clone(), "import_data_progress", file_name, crate::utils::calculate_percentage_u8(processed_index as f64, total as f64));
             std::thread::sleep(std::time::Duration::from_millis(100));
             let batch_results: Vec<ValidationResult> = batch.to_vec();
             let json_values: Vec<serde_json::Value> = batch_results

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use log::info;
 use crate::models::projects::project_base::project_site_model::NewProjectSite;
 use crate::modules::service::enums::SupportedTemplate;
-use crate::modules::service::projects::report_service::{DeleteResponse, OriginExcelDataResponse, ReportDetailResponse, ReportListResponse, ResponseData, SuccessResponse, SummaryResponse};
+use crate::modules::service::projects::report_service::{DeleteResponse, OriginExcelDataResponse, ReportDetailResponse, ReportListResponse, SuccessResponse, SummaryResponse};
 use crate::modules::service::projects::site_service::{
     DeleteSiteResponse, ImportSiteResponse, SaveSiteResponse, SiteListResponse,
 };

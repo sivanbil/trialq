@@ -52,11 +52,11 @@ pub fn calculate_percentage_u8(part: f64, whole: f64) -> u8 {
     }
 }
 
-use rust_xlsxwriter::{Format, Workbook, XlsxError, FormatAlign};
+use rust_xlsxwriter::{Format, Workbook, FormatAlign};
 use tauri_plugin_dialog::DialogExt;
 use std::fs;
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::env;
 use serde_json::Value;
 use crate::modules::service::projects::report_service::OriginExcelDataResponse;

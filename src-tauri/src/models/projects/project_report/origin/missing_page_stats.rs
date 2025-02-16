@@ -1,4 +1,3 @@
-use diesel::prelude::*;
 use diesel::sql_types::*;
 use diesel::QueryableByName;
 

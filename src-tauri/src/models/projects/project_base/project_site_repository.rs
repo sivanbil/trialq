@@ -1,10 +1,8 @@
 use crate::models::projects::project_base::project_site_model::{NewProjectSite, ProjectSite};
 use crate::models::projects::project_base::schema::project_site::dsl::*;
 use crate::models::projects::Pagination;
-use diesel::debug_query;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::sqlite::Sqlite;
 
 pub struct ProjectSiteRepository {
     pool: Pool<ConnectionManager<SqliteConnection>>, // 使用连接池

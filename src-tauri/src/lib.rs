@@ -57,7 +57,7 @@ lazy_static! {
         PathBuf::from(config_dir)
     };
 }
-use log::{error, info};
+use log::info;
 use once_cell::sync::OnceCell;
 
 // 使用线程安全的 OnceCell 存储全局状态

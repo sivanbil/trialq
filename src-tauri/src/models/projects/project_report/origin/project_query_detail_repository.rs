@@ -3,8 +3,6 @@ use crate::models::projects::project_report::origin::project_query_detail_model:
     NewProjectQueryDetail, ProjectQueryDetail,
 };
 use crate::models::projects::project_report::origin::schema::project_query_detail::dsl::*;
-use crate::utils::parse_date;
-use date_formatter::utils::DateFormat;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 
@@ -25,10 +23,7 @@ pub struct QueryAgeDistribution {
 }
 
 use chrono::{Local, NaiveDate};
-use log::{error, info};
 use crate::models::projects::Pagination;
-use crate::models::tools::schema::tools::dsl::tools;
-use crate::models::tools::tools_model::Tool;
 
 pub struct ProjectQueryDetailRepository {
     pool: Pool<ConnectionManager<SqliteConnection>>, // 使用 SqliteConnection

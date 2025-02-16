@@ -242,7 +242,7 @@ impl SiteService {
                 println!("{:?}", result.data);
                 let json_value = serde_json::to_value(&result.data).unwrap();
 
-                if let Ok(mut data) = serde_json::from_value::<NewProjectSite>(json_value) {
+                if let Ok(data) = serde_json::from_value::<NewProjectSite>(json_value) {
                     let site = NewProjectSite {
                         project_name: project_name.clone(),
                         site_number: data.site_number,
