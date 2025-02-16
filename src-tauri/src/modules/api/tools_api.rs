@@ -41,3 +41,34 @@ pub async fn delete_tool(
     // 删除工具
     tools_service.delete_tool(tool_id)
 }
+
+use std::process::Command;
+use tokio::task;
+
+#[tauri::command]
+pub async fn execute_ollama_serve() -> Result<(), String> {
+    let ollama_server = match std::env::var("OLLAMA_SERVER") {
+        Ok(path) => path,
+        Err(e) => return Err(format!("Failed to get OLLAMA_SERVER environment variable: {}", e)),
+    };
+
+    // 使用 tokio::task::spawn 在新的异步任务中执行命令
+    task::spawn(async move {
+        let mut output = match Command::new(ollama_server)
+            .arg("serve")
+            .spawn() {
+            Ok(child) => child,
+            Err(e) => {
+                eprintln!("Failed to spawn ollama serve command: {}", e);
+                return;
+            }
+        };
+
+        // 等待命令执行完成
+        if let Err(e) = output.wait() {
+            eprintln!("Error waiting for ollama serve command: {}", e);
+        }
+    });
+
+    Ok(())
+}

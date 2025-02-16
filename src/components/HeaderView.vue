@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import { HomeIcon, Cog6ToothIcon, WrenchScrewdriverIcon } from '@heroicons/vue/24/outline';
+import {HomeIcon, Cog6ToothIcon, WrenchScrewdriverIcon, CakeIcon} from '@heroicons/vue/24/outline';
 
 export default {
   name: 'HeaderView',
@@ -43,6 +43,7 @@ export default {
         { name: '项目管理', route: '/project/management', icon: HomeIcon },
         { name: '常用工具', route: '/tool/list', icon: WrenchScrewdriverIcon },
         { name: '个人设置', route: '/user/space', icon: Cog6ToothIcon },
+        { name: 'TrialQChat', route: '/trialq/chat', icon: CakeIcon },
 
       ],
     };

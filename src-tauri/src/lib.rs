@@ -27,7 +27,7 @@ use modules::{
             update_site_by_id,delete_report_item,
             get_progress
         },
-        tools_api::{delete_tool, fetch_tool_list, save_tool},
+        tools_api::{delete_tool, fetch_tool_list, save_tool, execute_ollama_serve},
     },
     service::{
         projects::{
@@ -147,7 +147,9 @@ pub fn run() {
             fetch_origin_detail,
             delete_report_item,
 
-            get_progress
+            get_progress,
+
+            execute_ollama_serve
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
