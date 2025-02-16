@@ -31,7 +31,7 @@ use serde::Serialize;
 use serde_json::Value;
 use std::sync::Arc;
 use std::time::SystemTime;
-
+use tauri::AppHandle;
 use crate::models::projects::project_report::project_report_data_model::ProjectReportData;
 use crate::modules::service::projects::site_service::SiteService;
 use crate::utils::excel_date_to_naive_date;
@@ -94,7 +94,7 @@ pub struct ResponseData {
     #[serde(rename = "stateName")]
     state_name: String,
 }
-
+use tauri::{Emitter};
 // 定义返回的 JSON 结构体
 #[derive(Serialize)]
 pub struct Response {
@@ -206,6 +206,7 @@ impl ProjectReportService {
 
     pub fn async_process_excel_files(
         &self,
+        app_handle: AppHandle,
         files: Vec<String>,
         project_number: String,
     ) -> Result<Response, String> {
@@ -219,17 +220,17 @@ impl ProjectReportService {
         // 3. 处理每个文件
         let mut miss_indexes = vec![];
         let mut miss_index = 0;
-        let mut process_index: u8 = 1;
-        let total_files:u8 = files.len() as u8;
         // 遍历 files，记录缺失的文件索引
         for file_path in files {
             if file_path.clone() != "" {
-                if let Some(app_handle) = crate::get_app_handle() {
-                    // 在这里使用 app_handle 触发事件或执行其他操作
-                    crate::utils::handle_progress_events(app_handle.clone(), "import_data_progress", &*file_path.clone(), crate::utils::calculate_percentage_u8(process_index , total_files) as u8);
-                }
+                let file_path_buf = PathBuf::from(file_path.clone());
+                let file_name = file_path_buf
+                    .file_stem()
+                    .and_then(|name| name.to_str())
+                    .unwrap_or_default();
+
                 // 如果 file_path 是 Some，调用 process_file 处理
-                self.process_file(&file_path, &project_number, &report_number, &create_time)?;
+                self.process_file(app_handle.clone(), &file_path,file_name, &project_number, &report_number, &create_time)?;
             } else {
                 // 如果 file_path 是 None，记录缺失的索引
                 miss_indexes.push(miss_index);
@@ -278,17 +279,13 @@ impl ProjectReportService {
     /// 处理单个文件
     fn process_file(
         &self,
+        app_handle: AppHandle,
         file_path: &str,
+        file_name: &str,
         project_number: &str,
         report_number: &str,
         create_time: &str,
     ) -> Result<(), String> {
-        let file_path_buf = PathBuf::from(file_path);
-        let file_name = file_path_buf
-            .file_stem()
-            .and_then(|name| name.to_str())
-            .unwrap_or_default();
-
         // 根据文件名判断文件类型
         let source_file_type = match file_name.to_lowercase().as_str() {
             s if s.contains("query") => "query_detail",
@@ -310,24 +307,32 @@ impl ProjectReportService {
             .create(source)
             .map_err(|e| e.to_string())?;
 
+
+        crate::utils::handle_progress_events(app_handle.clone(), "import_data_progress", file_name.clone(), 1u8);
+
         // 处理文件内容
         let callback = |results: Vec<ValidationResult>, file_name: &str| {
-            self.process_results(results, file_name, report_number, create_time);
+            self.process_results(app_handle.clone(), results, file_name, report_number, create_time);
         };
-
-        FileProcessor::process_file(file_path.to_string(), callback).map_err(|e| e.to_string())
+        FileProcessor::process_file(app_handle.clone(), file_path.to_string(), callback).map_err(|e| e.to_string())
     }
 
     /// 处理文件解析结果
     fn process_results(
         &self,
+        app_handle: AppHandle,
         results: Vec<ValidationResult>,
         file_name: &str,
         report_number: &str,
         create_time: &str,
     ) {
         // 将 results 按每 200 个一批进行拆分
+        let total = results.clone().chunks(200).len();
+        let mut processed_index = 0;
         for batch in results.chunks(200) {
+            processed_index +=1;
+            crate::utils::handle_progress_events(app_handle.clone(), "import_data_progress", file_name.clone(), crate::utils::calculate_percentage_u8(processed_index as f64, total as f64));
+            std::thread::sleep(std::time::Duration::from_millis(100));
             let batch_results: Vec<ValidationResult> = batch.to_vec();
             let json_values: Vec<serde_json::Value> = batch_results
                 .into_iter()
@@ -563,6 +568,7 @@ impl ProjectReportService {
     // 汇总数据
     pub fn summary_report_data(
         &self,
+        app: AppHandle,
         report_number: &str,
         project_no: &str,
     ) -> Result<SummaryResponse, String> {

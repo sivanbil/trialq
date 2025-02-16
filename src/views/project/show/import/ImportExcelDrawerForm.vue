@@ -376,8 +376,6 @@ export default {
         eventName: "import_data_progress"
       });
       try {
-
-
         // 调用导入接口
         const result = await this.$rustInvoke("handle_template_and_files", {
           projectNo: this.project, // 传递当前选择的项目
@@ -394,7 +392,6 @@ export default {
             console.log("文件导入成功:", result);
             closeModal(); // 关闭提示框
             this.currentStep = 4; // 切换到第四步
-
             await this.analyzeData();
           } else {
             closeModal(); // 关闭提示框

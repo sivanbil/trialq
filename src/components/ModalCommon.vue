@@ -2,7 +2,7 @@
   <div v-if="visible" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="z-index: 200">
     <div class="bg-white p-6 rounded-lg shadow-lg w-96">
       <h2 class="text-xl font-semibold mb-4">{{ title }}</h2>
-      <p class="text-gray-700 mb-4">{{ message }}</p>
+      <p class="text-gray-700 mb-4 modal-message">{{ message }}</p>
       <div class="flex justify-end" v-if="showCloseButton">
         <button
             @click="close"

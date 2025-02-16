@@ -14,8 +14,8 @@
     "windows": [
       {
         "title": "TrialQ",
-        "width": 1024,
-        "height": 768,
+        "width": 2048,
+        "height": 1152,
         "resizable": true,
         "fullscreen": false
       }

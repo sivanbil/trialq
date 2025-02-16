@@ -78,6 +78,8 @@ impl FileProcessor {
         let pool = ThreadPoolBuilder::new().num_threads(4).build()?;
         let results: Vec<ValidationResult> = pool.install(|| {
             rows.par_iter().map(|row| {
+                let thread_id = std::thread::current().id();
+                println!("Processing row on thread: {:?}", thread_id);
                 let mut row_data = HashMap::new();
                 let mut is_valid = true;
                 let mut errors = Vec::new();
@@ -122,8 +124,6 @@ impl FileProcessor {
                         }
                     }
                 }
-                debug!("row_data:{:#?}", &row_data);
-
                 ValidationResult {
                     data: row_data,
                     is_valid,
@@ -263,7 +263,7 @@ impl FileProcessor {
 
     // 扫描目录并处理文件
     // 处理单个文件并返回结果
-    pub fn process_file<F>(file_path: String, callback: F) -> Result<(), Box<dyn Error>>
+    pub fn process_file<F>(app_handle: AppHandle,file_path: String, callback: F) -> Result<(), Box<dyn Error>>
     where
         F: Fn(Vec<ValidationResult>, &str) -> (),
     {
@@ -297,7 +297,6 @@ impl FileProcessor {
         info!("====>读取文件完成");
         callback(results, file_name);
         info!("====>数据处理完成");
-
         Ok(())
     }
 }

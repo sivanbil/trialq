@@ -71,6 +71,7 @@ pub async fn get_project_by_id(
 #[tauri::command]
 pub async fn handle_template_and_files(
     state: State<'_, AppState>, // 从状态中获取 AppState
+    app: AppHandle,
     files: Vec<String>,
     template_name: String,
     project_no: String,
@@ -80,7 +81,7 @@ pub async fn handle_template_and_files(
     info!("Received project_no: {}", project_no);
     info!("Received files:{:?}", { files.clone() });
 
-    report_service.async_process_excel_files(files, project_no)
+    report_service.async_process_excel_files(app, files, project_no)
 }
 
 #[tauri::command]
@@ -171,6 +172,7 @@ pub async fn update_site_by_id(
 #[tauri::command]
 pub async fn handle_site_file(
     state: State<'_, AppState>, // 从状态中获取 AppState
+    app_handle: AppHandle,
     file_path: String,
     project_number: String,
 ) -> Result<ImportSiteResponse, String> {
@@ -178,19 +180,20 @@ pub async fn handle_site_file(
     println!("{:?}", project_number);
     let service = &state.site_service;
 
-    service.async_process_excel_files(file_path, project_number)
+    service.async_process_excel_files(app_handle,file_path, project_number)
 }
 
 #[tauri::command]
 pub async fn analyze_report_data(
     state: State<'_, AppState>, // 从状态中获取 AppState
+    app: AppHandle,
     report_number: String,
     project_number: String,
 ) -> Result<SummaryResponse, String> {
     let service = &state.report_service;
 
     // 删除工具
-    service.summary_report_data(&*report_number, &*project_number)
+    service.summary_report_data(app, &*report_number, &*project_number)
 }
 
 #[tauri::command]
@@ -250,6 +253,23 @@ pub async fn fetch_origin_detail(
     Ok(SuccessResponse {
         valid: true,
         message: "success".to_string()
+    })
+}
+
+use tauri::{Emitter};
+#[tauri::command]
+pub async fn get_progress(state: State<'_, AppState>,
+                          app: AppHandle) -> Result<SuccessResponse, String> {
+    // 模拟进度更新
+    for progress in 0..=100 {
+        // 每隔 500 毫秒发送一次进度
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        // 发送进度事件到前端
+        app.emit("progress_update", progress).map_err(|e| e.to_string())?;
+    }
+    Ok(SuccessResponse {
+        valid: false,
+        message: "com".to_string(),
     })
 }
 

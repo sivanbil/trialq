@@ -41,13 +41,13 @@ pub fn handle_progress_events(app: AppHandle, event_base_name: &str, url: &str, 
     }
 }
 
-pub fn calculate_percentage_u8(part: u8, whole: u8) -> u8 {
-    if whole == 0 {
+pub fn calculate_percentage_u8(part: f64, whole: f64) -> u8 {
+    if whole == 0.0 {
         0
     } else {
         // 将 u8 转换为 f64 进行计算
         // 将 u8 转换为 f64 进行计算
-        let percentage = (part as f64 / whole as f64) * 100.0;
+        let percentage = (part / whole ) * 100.0;
         percentage as u8
     }
 }

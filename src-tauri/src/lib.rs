@@ -23,7 +23,9 @@ use modules::{
             analyze_report_data, delete_project, delete_project_site, fetch_origin_detail,
             fetch_project_list, fetch_report_detail, fetch_report_list, fetch_site_list,
             fetch_supported_template_list, get_project_by_id, handle_site_file,
-            handle_template_and_files, save_project, save_project_site, update_site_by_id,delete_report_item
+            handle_template_and_files, save_project, save_project_site,
+            update_site_by_id,delete_report_item,
+            get_progress
         },
         tools_api::{delete_tool, fetch_tool_list, save_tool},
     },
@@ -144,6 +146,8 @@ pub fn run() {
             fetch_report_detail,
             fetch_origin_detail,
             delete_report_item,
+
+            get_progress
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

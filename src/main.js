@@ -29,12 +29,10 @@ app.config.globalProperties.$showModal = function (message, options = {},title =
         showCloseButton = true,
         useListener = false,
         eventName = null,
-        id = `modal-${Date.now()}` // 生成唯一的 id
     } = options;
-    console.log(options, useListener, eventName, id)
     // 创建一个临时 div 来挂载模态框
     const modalContainer = document.createElement('div');
-    modalContainer.id = id;
+    modalContainer.id = "modal-l";
     document.body.appendChild(modalContainer);
 
     // 创建模态框实例
@@ -60,12 +58,13 @@ app.config.globalProperties.$showModal = function (message, options = {},title =
             // 在这里处理事件
             console.log(`Received event: ${eventName}`, event.payload);
             // 根据 id 获取模态框元素并更新内容
-            const modalElement = document.getElementById(id);
+            const modalElement = document.getElementById(modalContainer.id);
             if (modalElement) {
                 // 假设 ModalContainer 组件中有一个显示消息的元素，这里简单更新消息
                 const messageElement = modalElement.querySelector('.modal-message');
+                console.log(messageElement, messageElement.textContent)
                 if (messageElement) {
-                    messageElement.textContent = `系统正在导入数据，进度: ${event.payload}`;
+                    messageElement.textContent = `系统正在导入数据，进度情况<span style="color:blue;">: ${event.payload}</span>`;
                 }
             }
         }).catch((error) => {

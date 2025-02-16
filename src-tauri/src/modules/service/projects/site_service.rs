@@ -5,6 +5,7 @@ use crate::models::projects::Pagination;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::SqliteConnection;
 use serde::Serialize;
+use tauri::AppHandle;
 
 #[derive(Serialize)]
 pub struct DeleteSiteResponse {
@@ -231,6 +232,7 @@ impl SiteService {
 
     pub fn async_process_excel_files(
         &self,
+        app_handle: AppHandle,
         file_path: String,
         project_name: String,
     ) -> Result<ImportSiteResponse, String> {
@@ -256,7 +258,7 @@ impl SiteService {
                 }
             }
         };
-        FileProcessor::process_file(file_path, callback)
+        FileProcessor::process_file(app_handle, file_path, callback)
             .map_err(|e| e.to_string())
             .expect("TODO: panic message");
 
