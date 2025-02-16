@@ -3,7 +3,7 @@ import HomePage from '../views/HomePage.vue'; // 引入 HomePage 组件
 import ProjectManagement from '../views/project/ProjectManagement.vue'; // 引入 ProjectManagement 组件
 import ToolList from "@/views/tools/ToolList.vue";
 import UserSpace from "@/views/user/UserSpace.vue";
-// import TrialQChat from "@/views/user/LLMChat.vue";
+import TrialQChat from "@/views/user/LLMChat.vue";
 import NotFound from '../views/NotFound.vue'; // 引入 404 组件
 
 const routes = [
@@ -27,11 +27,11 @@ const routes = [
         name: 'UserSpace',
         component: UserSpace,
     },
-    // {
-    //     path: '/trialq/chat',
-    //     name: 'LLMChat',
-    //     component: TrialQChat,
-    // },
+    {
+        path: '/trialq/chat',
+        name: 'LLMChat',
+        component: TrialQChat,
+    },
     {
         path: '/:pathMatch(.*)*', // 捕获所有未匹配的路由
         name: 'NotFound',
