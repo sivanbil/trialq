@@ -107,7 +107,7 @@ use crate::core::excel_process_engine::{FileProcessor, ValidationResult};
 use crate::models::projects::project_base::project_site_model::ProjectSite;
 use crate::models::projects::project_report::project_report_data_model::NewProjectReportData;
 use crate::models::projects::project_report::project_report_source_model::NewProjectReportSource;
-
+use calamine::{open_workbook, Data, Range, Reader, Xlsx, XlsxError};
 pub struct ProjectReportService {
     repository: Arc<ProjectReportRepository>,
     source_repository: Arc<ProjectReportSourceRepository>,
@@ -209,7 +209,6 @@ impl ProjectReportService {
         // 1. 生成报告编号和创建时间
         let create_time = format_timestamp((Local::now().timestamp()) as u64, DateFormat::DateTime);
         let report_number = format!("{}", generate_task_number());
-
         // 2. 创建项目报告
         self.create_project_report(&project_number, &report_number, &create_time)?;
 
@@ -767,12 +766,13 @@ impl ProjectReportService {
                     .find_query_details_by_report_number(report_number, pagination)?
                     .into_iter()
                     .map(|mut d| {
-                        let date =
-                            excel_date_to_naive_date((&d.qry_open_date_localized).parse().unwrap());
-                        let formatted = date.format_with_items(
-                            chrono::format::strftime::StrftimeItems::new("%d-%B-%y"),
-                        );
-                        d.qry_open_date_localized = formatted.to_string();
+
+                        // let date =
+                        //     excel_date_to_naive_date((&d.qry_open_date_localized).parse().unwrap());
+                        // let formatted = date.format_with_items(
+                        //     chrono::format::strftime::StrftimeItems::new("%d-%B-%y"),
+                        // );
+                        // d.qry_open_date_localized = formatted.to_string();
                         let mut value = serde_json::to_value(&d).unwrap();
 
                         if let Some(pos) = d.qry_open_date.find(' ') {
@@ -783,27 +783,27 @@ impl ProjectReportService {
 
                             let current_date = Local::now().naive_local().date();
                             // 计算日期差值
-                            println!(
+                            info!(
                                 "current_date:{}, parsed_qry_open_date: {:?}",
                                 current_date, parsed_qry_open_date
                             );
                             let days = (current_date - parsed_qry_open_date).num_days();
-                            if let serde_json::Value::Object(ref mut obj) = value {
+                            if let Value::Object(ref mut obj) = value {
                                 obj.insert(
                                     "op_gt7".to_string(),
-                                    serde_json::Value::Number(((days > 7) as u8).into()),
+                                    Value::Number(((days > 7) as u8).into()),
                                 );
                                 obj.insert(
                                     "op_gt14".to_string(),
-                                    serde_json::Value::Number(((days > 14) as u8).into()),
+                                    Value::Number(((days > 14) as u8).into()),
                                 );
                                 obj.insert(
                                     "op_gt21".to_string(),
-                                    serde_json::Value::Number(((days > 21) as u8).into()),
+                                    Value::Number(((days > 21) as u8).into()),
                                 );
                                 obj.insert(
                                     "op_gt30".to_string(),
-                                    serde_json::Value::Number(((days >= 30) as u8).into()),
+                                    Value::Number(((days >= 30) as u8).into()),
                                 );
                             }
                         }

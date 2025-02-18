@@ -1,5 +1,5 @@
 use crate::CONFIG_DIR;
-use calamine::{open_workbook, Reader, Xlsx};
+use calamine::{open_workbook, ExcelDateTime, Reader, Xlsx};
 use csv::ReaderBuilder;
 use log::{error, info};
 use mlua::Lua;
@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::PathBuf;
+use calamine::Data::DateTime;
+use chrono::NaiveTime;
 use rayon::iter::ParallelIterator;
 use rayon::prelude::IntoParallelRefIterator;
 use tauri::AppHandle;
@@ -58,6 +60,16 @@ use rayon::ThreadPoolBuilder; // 引入 ThreadPoolBuilder
 pub struct FileProcessor;
 
 impl FileProcessor {
+    // 将 ExcelDateTime 转换为 21-Jan-25 格式的字符串
+    fn excel_datetime_to_ddmmm_yy(excel_dt: &ExcelDateTime) -> Option<String> {
+        let datetime = excel_dt.as_datetime()?;
+        Some(datetime.format("%d-%b-%y").to_string())
+    }
+    // 将 ExcelDateTime 转换为 m/d/yyyy hh:mm:ss 格式的字符串
+    fn excel_datetime_to_mdy_hms(excel_dt: &ExcelDateTime) -> Option<String> {
+        let datetime = excel_dt.as_datetime()?;
+        Some(datetime.format("%-m/%-d/%Y %H:%M:%S").to_string())
+    }
     // 解析数据的通用函数
     fn parse_data_with_rules(
         headers: Vec<String>,
@@ -74,12 +86,9 @@ impl FileProcessor {
             }
         }
 
-        // 创建自定义线程池并设置最大线程数为 10//todo
         let pool = ThreadPoolBuilder::new().num_threads(4).build()?;
         let results: Vec<ValidationResult> = pool.install(|| {
             rows.par_iter().map(|row| {
-                let thread_id = std::thread::current().id();
-                println!("Processing row on thread: {:?}", thread_id);
                 let mut row_data = HashMap::new();
                 let mut is_valid = true;
                 let mut errors = Vec::new();
@@ -144,8 +153,18 @@ impl FileProcessor {
         // 打开 Excel 文件
         let mut workbook: Xlsx<_> = open_workbook(path)?;
 
-        // 读取第一个工作表
-        let range = workbook.worksheet_range("Sheet1")?;
+        // 通过索引获取第一个工作表
+        let range = match workbook.worksheet_range_at(0) {
+            Some(Ok(range)) => range,
+            Some(Err(e)) => {
+                error!("读取第一个工作表失败: {}", e);
+                return Err(e.into());
+            }
+            None => {
+                error!("文件没有工作表");
+                return Err("文件没有工作表".into());
+            }
+        };
 
         // 获取表头行
         let headers: Vec<String> = range
@@ -160,7 +179,31 @@ impl FileProcessor {
         let rows: Vec<Vec<String>> = range
             .rows()
             .skip(1)
-            .map(|row| row.iter().map(|cell| cell.to_string()).collect())
+            .map(|row| row.iter().map(|cell| {
+                if let DateTime(excel_dt) = cell {
+                    if let Some(datetime) = excel_dt.as_datetime() {
+                        if datetime.time() != NaiveTime::from_hms_opt(0, 0, 0).unwrap() {
+                            // 包含时分秒，转换为 m/d/yyyy hh:mm:ss 格式
+                            if let Some(date_str_mdy_hms) = Self::excel_datetime_to_mdy_hms(excel_dt) {
+                                date_str_mdy_hms
+                            } else {
+                                cell.to_string()
+                            }
+                        } else {
+                            if let Some(date_str_ddmmm_yy) = Self::excel_datetime_to_ddmmm_yy(excel_dt) {
+                                date_str_ddmmm_yy
+                            } else {
+                                cell.to_string()
+                            }
+                        }
+                    } else {
+                        cell.to_string()
+                    }
+                } else {
+                    cell.to_string()
+                }
+
+            }).collect())
             .collect();
         // 调用通用解析函数
         Self::parse_data_with_rules(headers, rows, rules, validation_rules)

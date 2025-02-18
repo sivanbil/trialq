@@ -73,14 +73,15 @@ pub fn export_excel(
     let worksheet = workbook.add_worksheet();
 
     // 创建格式对象
-    let bold_format = Format::new().set_bold();
-    let center_format = Format::new().set_align(FormatAlign::Left);
+    let bold_format = Format::new()
+        .set_font_name("Arial").set_font_size(11).set_bold();
+    let center_format = Format::new().set_font_name("Arial").set_font_size(11).set_align(FormatAlign::Left);
 
     // 动态写入表头并应用加粗格式
     let mut col_index = 0;
     for header in header_order.clone() {
         let value = table_header_map.get(&header).unwrap();
-        worksheet.set_column_width(col_index, 40).expect("set_column_width failed");
+        worksheet.set_column_width_pixels(col_index, 80).expect("set_column_width failed");
         worksheet.write_string_with_format(0, col_index, value, &bold_format)
             .map_err(|e| e.to_string())?;
         col_index += 1;

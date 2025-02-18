@@ -78,8 +78,8 @@ fn process_message(app_handle: AppHandle) {
 pub fn run() {
     dotenv::dotenv().ok();
     // 获取当前项目目录
-    let current_dir = env::current_dir().expect("无法获取当前工作目录");
-    let log_dir = current_dir.join("logs"); // 在项目根目录下创建 logs 目录
+    let logs_dir = env::var("LOGS_DIR").expect("无法获取当前工作目录");
+    let log_dir = PathBuf::from(logs_dir); // 在项目根目录下创建 logs 目录
 
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::new()
@@ -93,14 +93,14 @@ pub fn run() {
                     message
                 ))
             })
-            .max_file_size(50_000 /* bytes */)
+            .max_file_size(500_000 /* bytes */)
             .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
             .target(tauri_plugin_log::Target::new(
             tauri_plugin_log::TargetKind::Folder {
                 file_name: Some("trailq_logs".to_string()),
                 path: log_dir, // 指定日志存储路径
-            },
-        )).build())
+            }))
+            .build())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // 初始化连接池

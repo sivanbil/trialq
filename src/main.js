@@ -53,18 +53,18 @@ app.config.globalProperties.$showModal = function (message, options = {},title =
 
     // 如果需要监听事件
     if (useListener && eventName) {
-        console.log('listen..........', eventName)
+        console.debug('listen..........', eventName)
         listen(eventName, (event) => {
             // 在这里处理事件
-            console.log(`Received event: ${eventName}`, event.payload);
+            console.debug(`Received event: ${eventName}`, event.payload);
             // 根据 id 获取模态框元素并更新内容
             const modalElement = document.getElementById(modalContainer.id);
             if (modalElement) {
                 // 假设 ModalContainer 组件中有一个显示消息的元素，这里简单更新消息
-                const messageElement = modalElement.querySelector('.modal-message');
-                console.log(messageElement, messageElement.textContent)
+                const messageElement = modalElement.querySelector('.modal-message-extra');
+                console.debug(messageElement, messageElement.textContent)
                 if (messageElement) {
-                    messageElement.textContent = `系统正在导入数据，进度情况<span style="color:blue;">: ${event.payload}</span>`;
+                    messageElement.textContent = `进度情况: ${event.payload}`;
                 }
             }
         }).catch((error) => {

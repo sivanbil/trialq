@@ -1,15 +1,12 @@
 <template>
   <!-- 按钮组 -->
-  <div class=" mb-6 text-right">
-    <button
-        @click="exportTable"
-        class="btn-success bg-blue-500 text-white px-2 py-2 rounded"
-    >
+  <div class="mb-6 text-right">
+    <button @click="exportTable" class="btn-success bg-blue-500 text-white px-2 py-2 rounded">
       导出表格
     </button>
   </div>
   <div id="tableContainer" class="overflow-x-auto overflow-y-auto max-h-[500px]" style="zoom:0.5">
-    <table  id="exportTable" class="min-w-full bg-white border border-gray-200">
+    <table id="exportTable" class="min-w-full bg-white border border-gray-200">
       <thead>
       <tr>
         <!-- 渲染表头 -->
@@ -35,7 +32,7 @@
       </tr>
 
       <!-- 如果有需要统计的列，显示汇总行 -->
-      <tr v-if="hasData && totalConfig.columns.length > 0" class="bg-blue-500 text-white">
+      <tr v-if="hasData && totalConfig.columns.length > 0" class="bg-orange-500 text-white">
         <td
             :colspan="totalConfig.mergeRange.end - totalConfig.mergeRange.start + 1"
             class="px-6 py-4 whitespace-nowrap text-sm  border border-gray-200 text-center"
@@ -65,7 +62,7 @@
 </template>
 
 <script>
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 export default {
   name: 'SummaryTable',
@@ -166,55 +163,111 @@ export default {
       return `${this.exportFileNamePrefix}${year}${month}${day}${hours}${minutes}${seconds}.xlsx`;
     },
     // 导出表格
-    exportTable() {
+    async exportTable() {
       if (!this.hasData) {
         alert('没有数据可导出');
         return;
       }
 
-      // 获取表格元素
-      const table = document.getElementById('exportTable');
-      // 将表格转换为工作表
-      const ws = XLSX.utils.table_to_sheet(table);
-      // 添加合并单元格信息
-      const lastRowIndex = this.tableData.length;
-      const startCol = this.totalConfig.mergeRange.start;
-      const endCol = this.totalConfig.mergeRange.end;
-      ws['!merges'] = ws['!merges'] || [];
-      ws['!merges'].push({ s: { r: lastRowIndex, c: startCol }, e: { r: lastRowIndex, c: endCol } });
-      // 设置列宽
-      this.setColumnWidths(ws, table);
-      // 创建工作簿并添加工作表
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-      // 生成文件名
-      const fileName = this.generateFileName();
-      // 导出文件
-      XLSX.writeFile(wb, fileName);
-    },
-    // 设置列宽
-    setColumnWidths(ws, table) {
-      // 获取表格的列元素
-      const cols = table.querySelectorAll('th, td');
-      const colWidths = {};
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Sheet1');
 
-      // 遍历列元素，计算每列的最大宽度
-      cols.forEach((col) => {
-        const colIndex = col.cellIndex; // 列索引
-        const width = col.offsetWidth; // 列的实际宽度
+      const headerKeys = Object.keys(this.headers);
+      // 添加表头
+      worksheet.addRow(headerKeys.map(key => this.headers[key]));
 
-        // 如果当前列的宽度大于已记录的最大宽度，则更新
-        if (!colWidths[colIndex] || width > colWidths[colIndex]) {
-          colWidths[colIndex] = width;
-        }
+      // 添加数据行
+      this.tableData.forEach((row) => {
+        const rowData = headerKeys.map(key => row[key]);
+        worksheet.addRow(rowData);
       });
 
-      // 设置工作表的列宽
-      ws['!cols'] = Object.keys(colWidths).map((colIndex) => ({
-        wch: colWidths[colIndex] / 7, // 将像素宽度转换为 Excel 列宽单位
-      }));
-    },
-  },
+      // 如果有需要统计的列，添加汇总行
+      if (this.hasData && this.totalConfig.columns.length > 0) {
+        const summaryRow = [];
+        const startCol = this.totalConfig.mergeRange.start;
+        const endCol = this.totalConfig.mergeRange.end;
+        for (let i = 0; i < startCol; i++) {
+          summaryRow.push('');
+        }
+        summaryRow.push('Grand Total');
+        for (let i = startCol + 1; i <= endCol; i++) {
+          summaryRow.push('');
+        }
+        Object.entries(this.headers).slice(endCol + 1).forEach(([/* _ */, /* header */], cellIndex) => {
+          const colIndex = cellIndex + endCol + 1;
+          summaryRow.push(this.totalConfig.columns.includes(colIndex) ? this.totals[colIndex] : '');
+        });
+        const summaryRowNumber = this.tableData.length + 1;
+
+        worksheet.addRow(summaryRow);
+
+        // 合并Grand Total行前三列单元格
+        worksheet.mergeCells(summaryRowNumber+1, 1, summaryRowNumber+1, 3);
+
+        // 设置合并单元格背景颜色为橙色
+        const mergedCell = worksheet.getCell(summaryRowNumber+1, 1);
+        mergedCell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: {argb: 'FFFFA500'}
+        };
+
+        // 设置Grand Total行其他有数据的单元格背景色为橙色
+        Object.entries(this.headers).slice(endCol + 1).forEach(([/* _ */, /* header */], cellIndex) => {
+          const colIndex = cellIndex + endCol + 1;
+          if (this.totalConfig.columns.includes(colIndex)) {
+            const cell = worksheet.getCell(summaryRowNumber+1, colIndex+1);
+            cell.font = {
+              color: {argb: 'FFFFA500'}
+            };
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: {argb: 'FFFFA500'},
+            };
+          }
+        });
+      }
+
+      // 设置表头字体样式（加粗）
+      const headerFontStyle = {
+        name: 'Arial',
+        size: 11,
+        bold: true
+      };
+      const normalFontStyle = {
+        name: 'Arial',
+        size: 11
+      };
+
+      worksheet.eachRow((row, rowNumber) => {
+        row.eachCell((cell) => {
+          if (rowNumber === 1) {
+            cell.font = headerFontStyle;
+          } else if (rowNumber === this.tableData.length + 1) {
+            // 设置汇总行字体加粗
+            cell.font = {...normalFontStyle, bold: true};
+          } else {
+            cell.font = normalFontStyle;
+          }
+          cell.alignment = {horizontal: 'left'}; // 设置左对齐
+        });
+      });
+
+      // 生成文件名
+      const fileName = this.generateFileName();
+      // 保存文件
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }
+  }
 };
 </script>
 

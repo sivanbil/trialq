@@ -310,7 +310,7 @@ export default {
           filters: [
             {
               name: "Excel Files",
-              extensions: ["xlsx", "xls", "csv"], // 限制文件类型
+              extensions: ["xlsx"], // 限制文件类型
             },
           ],
         });

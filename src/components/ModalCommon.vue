@@ -3,6 +3,7 @@
     <div class="bg-white p-6 rounded-lg shadow-lg w-96">
       <h2 class="text-xl font-semibold mb-4">{{ title }}</h2>
       <p class="text-gray-700 mb-4 modal-message">{{ message }}</p>
+      <p class="text-gray-700 mb-4 modal-message-extra"></p>
       <div class="flex justify-end" v-if="showCloseButton">
         <button
             @click="close"
