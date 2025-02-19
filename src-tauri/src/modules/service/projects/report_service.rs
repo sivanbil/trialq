@@ -788,7 +788,9 @@ impl ProjectReportService {
                                 current_date, parsed_qry_open_date
                             );
                             let days = (current_date - parsed_qry_open_date).num_days();
+
                             if let Value::Object(ref mut obj) = value {
+                                obj.insert("op_days".to_string(), Value::from(days));
                                 obj.insert(
                                     "op_gt7".to_string(),
                                     Value::Number(((days > 7) as u8).into()),

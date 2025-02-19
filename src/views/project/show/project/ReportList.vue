@@ -137,6 +137,7 @@ export default {
           log_id: 'Log#',
           qry_open_date: 'QryOpenDate',
           qry_open_date_localized: 'QryOpenDateLocalized',
+          op_days: 'Days',
           op_gt7: '>7days',
           op_gt14: '>14days',
           op_gt21: '＞21days',
