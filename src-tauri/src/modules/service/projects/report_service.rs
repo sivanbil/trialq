@@ -571,7 +571,9 @@ impl ProjectReportService {
         let result_report = self
             .repository
             .find_report_by_report_number(report_number)?;
+        // @todo监测是否可以刷新
 
+        let should_update = false;
         let report = result_report.unwrap();
         let report_id = report.id;
         // 先看看目前维护的中心是否全乎，如果不存在，就维护进去
@@ -590,7 +592,7 @@ impl ProjectReportService {
             );
             if let Ok(site_list_response) = result {
                 // 成功获取 SiteListResponse
-                self.summary_every_site_data(report_number, site_list_response.sites);
+                self.summary_every_site_data(report_number, site_list_response.sites, should_update);
                 total_pages = (site_list_response.total as f64 / page_size as f64).ceil() as i64;
                 current_page += 1;
             } else {
@@ -608,7 +610,7 @@ impl ProjectReportService {
         })
     }
 
-    pub fn summary_every_site_data(&self, report_number: &str, sites: Vec<ProjectSite>) {
+    pub fn summary_every_site_data(&self, report_number: &str, sites: Vec<ProjectSite>, should_update: bool) {
         sites.iter().for_each(|site| {
             let site_number = site.site_number.clone();
             let vec_result = self
@@ -692,6 +694,7 @@ impl ProjectReportService {
                 op_gt30: op_gte30,
                 report_number: format!("{}", report_number),
             };
+            // @todo 更新summary
             self.data_repository
                 .create_report_data(data)
                 .expect("TODO: panic message");
@@ -774,6 +777,7 @@ impl ProjectReportService {
                         // );
                         // d.qry_open_date_localized = formatted.to_string();
                         let mut value = serde_json::to_value(&d).unwrap();
+                        let current_date = Local::now().naive_local().date();
 
                         if let Some(pos) = d.qry_open_date.find(' ') {
                             let output = &d.qry_open_date[0..pos];
@@ -781,7 +785,6 @@ impl ProjectReportService {
                             let parsed_qry_open_date =
                                 NaiveDate::parse_from_str(output, "%m/%d/%Y").unwrap();
 
-                            let current_date = Local::now().naive_local().date();
                             // 计算日期差值
                             info!(
                                 "current_date:{}, parsed_qry_open_date: {:?}",
@@ -809,6 +812,23 @@ impl ProjectReportService {
                                 );
                             }
                         }
+
+                        if let Some(pos) = d.qry_response_date.find(' ') {
+                            let output = &d.qry_response_date[0..pos];
+                            // 解析日期字符串，并将结果绑定到一个新的变量名
+                            let parsed_qry_response_date =
+                                NaiveDate::parse_from_str(output, "%m/%d/%Y").unwrap();
+
+                            // 计算日期差值
+                            info!(
+                                "current_date:{}, parsed_qry_response_date: {:?}",
+                                current_date, parsed_qry_response_date
+                            );
+                            let days = (current_date - parsed_qry_response_date).num_days();
+                            if let Value::Object(ref mut obj) = value {
+                                obj.insert("qry_response_days".to_string(), Value::from(days));
+                            }
+                        }
                         value
                     })
                     .collect()
@@ -826,14 +846,16 @@ impl ProjectReportService {
                 .map(|d| {
                     let mut value = serde_json::to_value(&d).unwrap();
                     let days = d.days_of_missing_pages;
-                    if let serde_json::Value::Object(ref mut obj) = value {
+                    if let Value::Object(ref mut obj) = value {
+                        obj.insert("md_days".to_string(), Value::from(days));
+
                         obj.insert(
                             "md_gt7".to_string(),
-                            serde_json::Value::Number(((days > 7) as u8).into()),
+                            Value::Number(((days > 7) as u8).into()),
                         );
                         obj.insert(
                             "md_gt14".to_string(),
-                            serde_json::Value::Number(((days > 14) as u8).into()),
+                            Value::Number(((days > 14) as u8).into()),
                         );
                     }
                     value
