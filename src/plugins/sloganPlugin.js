@@ -7,7 +7,7 @@ export default {
             version: 'Beta 0.0.1',
             sub: '临研数据分析『超跑引擎』全速驱动突破，效率一路狂飙！',
             year: currentYear, // 自动获取的当前年份
-            email: 'trialqtool@gmail.com', // 固定的电子邮件地址
+            email: 'trialqforu@gmail.com', // 固定的电子邮件地址
         };
         async function invokeListenerCommand(rustInvoke, command) {
             try {
