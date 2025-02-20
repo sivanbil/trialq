@@ -11,20 +11,37 @@
         </div>
 
         <!-- 右侧菜单 -->
+        <!-- 右侧菜单 -->
         <nav class="flex space-x-4">
-          <router-link
-              v-for="(item, index) in menuItems"
-              :key="index"
-              :to="item.route"
-              class="px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center"
-              :class="{
-              'bg-purple-800 text-white': isActive(item.route),
-              'text-gray-700 hover:bg-purple-100': !isActive(item.route),
-            }"
-          >
-            <component :is="item.icon" class="w-5 h-5 mr-2" />
-            {{ item.name }}
-          </router-link>
+          <template v-for="(item, index) in menuItems" :key="index">
+            <!-- 内部路由链接 -->
+            <router-link
+                v-if="!item.isExternal"
+                :to="item.route"
+                class="px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center"
+                :class="{
+                'bg-purple-800 text-white': isActive(item.route),
+                'text-gray-700 hover:bg-purple-100': !isActive(item.route),
+              }"
+            >
+              <component :is="item.icon" class="w-5 h-5 mr-2" />
+              {{ item.name }}
+            </router-link>
+            <!-- 外部链接 -->
+            <a
+                v-else
+                :href="item.route"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center"
+                :class="{
+                'text-gray-700 hover:bg-purple-100': true,
+              }"
+            >
+              <component :is="item.icon" class="w-5 h-5 mr-2" />
+              {{ item.name }}
+            </a>
+          </template>
         </nav>
       </div>
     </div>
@@ -32,7 +49,7 @@
 </template>
 
 <script>
-import {HomeIcon, Cog6ToothIcon, WrenchScrewdriverIcon} from '@heroicons/vue/24/outline';
+import {HomeIcon, Cog6ToothIcon, WrenchScrewdriverIcon, Battery100Icon} from '@heroicons/vue/24/outline';
 
 export default {
   name: 'HeaderView',
@@ -40,7 +57,8 @@ export default {
     return {
       // 动态菜单项
       menuItems: [
-        { name: '项目管理', route: '/project/management', icon: HomeIcon },
+        { name: '官网', route: 'https://trialqforu.github.io/', icon: HomeIcon, isExternal: true },
+        { name: '项目管理', route: '/project/management', icon: Battery100Icon },
         { name: '常用工具', route: '/tool/list', icon: WrenchScrewdriverIcon },
         { name: '个人设置', route: '/user/space', icon: Cog6ToothIcon },
         // { name: 'TrialQChat', route: '/trialq/chat', icon: CakeIcon },
