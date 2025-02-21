@@ -124,7 +124,7 @@ export default {
           instance_name: 'Instance Name',
           data_page_name: 'Data Page Name',
           days_of_missing_pages: 'Days of missing Pages',
-          md_days: 'Days',
+          // md_days: 'Days',
           md_gt7: 'MP＞7days',
           md_gt14: 'MP>14days',
         },

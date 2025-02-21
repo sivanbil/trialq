@@ -245,9 +245,14 @@ export default {
         row.eachCell((cell) => {
           if (rowNumber === 1) {
             cell.font = headerFontStyle;
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: {argb: 'FFFFA500'},
+            };
           } else if (rowNumber === this.tableData.length + 1) {
             // 设置汇总行字体加粗
-            cell.font = {...normalFontStyle, bold: true};
+            cell.font = {...normalFontStyle, bold: false};
           } else {
             cell.font = normalFontStyle;
           }
