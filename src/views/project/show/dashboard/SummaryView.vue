@@ -60,10 +60,10 @@ export default {
           percent_pages_sdved: 'Pages SDVed',
           answered_query: 'Answered Query',
           opened_query: 'Open Query',
-          op_gt7: '>7days',
-          op_gt14: '>14days',
-          op_gt21: '＞21days',
-          op_gt30: '≥30days',
+          op_gt7: 'Open>7days',
+          op_gt14: 'Open>14days',
+          op_gt21: 'Open＞21days',
+          op_gt30: 'Open≥30days',
           edc_status_comment: 'EDC Status Comment'
         }
       ]
